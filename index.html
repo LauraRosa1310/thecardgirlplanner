@@ -469,6 +469,13 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ac)!impo
 </style>
 </head>
 <body>
+<div id="loginscreen" style="position:fixed;inset:0;z-index:99999;background:linear-gradient(160deg,#24262b,#191b1f);display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff;font-family:'Avenir Next','Avenir',sans-serif;padding:24px;text-align:center">
+  <div style="font-size:2.1em;font-weight:800;letter-spacing:.05em">THE <span style="color:#e6c079">CARD</span> GIRL</div>
+  <div style="font-size:.72em;color:#b7b8bd;letter-spacing:.18em;text-transform:uppercase;margin:6px 0 34px">Business Planner</div>
+  <button onclick="cloudLogin()" style="background:#fff;color:#24262b;border:0;border-radius:10px;padding:13px 28px;font-family:inherit;font-size:1em;font-weight:700;cursor:pointer">Entrar con Google</button>
+  <div style="font-size:.74em;color:#8b8b83;margin-top:20px;max-width:300px;line-height:1.6">Entra con tu cuenta de Google para acceder a tu planner y tener tus datos sincronizados en todos tus dispositivos.</div>
+  <div onclick="skipLogin()" style="font-size:.7em;color:#7d7e83;margin-top:26px;cursor:pointer;text-decoration:underline">Usar sin conexión en este dispositivo</div>
+</div>
 <aside class="side">
   <div class="logo">THE <em>CARD</em> GIRL<span class="logo-sub">Business Planner</span></div>
   <div id="authbar"></div>
@@ -485,7 +492,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ac)!impo
     <button class="tab" data-t="check" onclick="sw('check',this)"><span class="ti">✓</span>Checklist</button>
     <button class="tab" data-t="cfg" onclick="sw('cfg',this)"><span class="ti">⚙</span>Config</button>
   </nav>
-  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v55</div>
+  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v56</div>
 </aside>
 <main class="content">
 
@@ -2383,7 +2390,8 @@ function cloudGather(){const o={};CLOUD_KEYS.forEach(function(k){const v=LS.get(
 let _cpT=null;
 window._cloudPushDebounced=function(){if(!CLOUD_USER||typeof firebase==='undefined')return;clearTimeout(_cpT);_cpT=setTimeout(function(){try{firebase.database().ref('users/'+CLOUD_USER.uid).set({data:cloudGather(),updated:Date.now()});}catch(e){}},1200);};
 function cloudApply(obj){if(!obj)return;Object.keys(obj).forEach(function(k){if(k.indexOf('tcg_')===0&&obj[k]!=null)LS.set(k,obj[k]);});load();try{migrateReal();}catch(e){}try{renderCrono();}catch(e){}try{renderDash();}catch(e){}try{renderGastos();}catch(e){}}
-function updateAuthUI(u){const el=document.getElementById('authbar');if(!el)return;if(u){el.innerHTML='<div style="font-size:.62em;color:var(--sdt);padding:2px 10px 10px;line-height:1.5">Conectada: '+(u.displayName||u.email||'')+'<br><span onclick="cloudLogout()" style="color:#e6c079;cursor:pointer;font-weight:600">Cerrar sesion</span></div>';}else{el.innerHTML='<div style="padding:2px 10px 12px"><button onclick="cloudLogin()" style="width:100%;padding:8px;background:#fff;color:#24262b;border:0;border-radius:7px;font-size:.72em;font-weight:700;cursor:pointer;font-family:inherit">Entrar con Google</button></div>';}}
+function updateAuthUI(u){var ls=document.getElementById('loginscreen');var el=document.getElementById('authbar');if(u){if(ls)ls.style.display='none';if(el)el.innerHTML='<div style="font-size:.62em;color:var(--sdt);padding:2px 10px 10px;line-height:1.5">Conectada: '+(u.displayName||u.email||'')+'<br><span onclick="cloudLogout()" style="color:#e6c079;cursor:pointer;font-weight:600">Cerrar sesion</span></div>';}else{if(ls)ls.style.display='flex';if(el)el.innerHTML='<div style="padding:2px 10px 12px"><button onclick="cloudLogin()" style="width:100%;padding:8px;background:#fff;color:#24262b;border:0;border-radius:7px;font-size:.72em;font-weight:700;cursor:pointer;font-family:inherit">Entrar con Google</button></div>';}}
+function skipLogin(){var ls=document.getElementById('loginscreen');if(ls)ls.style.display='none';}
 function cloudLogin(){if(typeof firebase==='undefined'){alert('Firebase no ha cargado (revisa tu conexion).');return;}firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(function(e){alert('Error al entrar: '+e.message);});}
 function cloudLogout(){if(typeof firebase!=='undefined')firebase.auth().signOut();}
 updateAuthUI(null);
