@@ -492,7 +492,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ac)!impo
     <button class="tab" data-t="check" onclick="sw('check',this)"><span class="ti">✓</span>Checklist</button>
     <button class="tab" data-t="cfg" onclick="sw('cfg',this)"><span class="ti">⚙</span>Config</button>
   </nav>
-  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v59</div>
+  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v60</div>
 </aside>
 <main class="content">
 
@@ -982,6 +982,7 @@ function renderCrono(){
         ${haReal?`<div class="diff-box">
           <div class="diff-row"><span class="dk">Stock real invertido</span><span class="dv neu">${fmt(rd.est_stock_real)}€</span></div>
           <div class="diff-row"><span class="dk">Ventas reales</span><span class="dv neu">${fmt(rd.ventas)}€</span></div>
+          ${rd.ndir?`<div class="diff-row"><span class="dk">Directos hechos</span><span class="dv neu">${rd.ndir}</span></div>`:''}
           <div class="diff-row"><span class="dk">Multiplicador real</span><span class="dv neu">${fmtD(rd.ventas&&rd.est_stock_real?rd.ventas/rd.est_stock_real:null)}</span></div>
           <div class="diff-row"><span class="dk">Beneficio neto real</span><span class="dv ${benefReal>=w.est_benef?'pos':'neg'}">${fmt(benefReal)}€</span></div>
           <div class="diff-row"><span class="dk">Diferencia vs estimado</span><span class="dv ${diff>=0?'pos':'neg'}">${diff>=0?'+':''}${fmt(diff)}€</span></div>
@@ -998,6 +999,7 @@ function renderCrono(){
           <div class="real-field"><label>Stock real invertido (€)</label><input type="number" id="r-stock-${w.id}" value="${rd.est_stock_real||''}" placeholder="ej: 500" step="10" oninput="autoReal('${w.id}')"></div>
           <div class="real-field"><label>Ventas reales (€)</label><input type="number" id="r-ventas-${w.id}" value="${rd.ventas||''}" placeholder="ej: 725" step="10" oninput="autoReal('${w.id}')"></div>
           <div class="real-field"><label>Beneficio neto real (€)<span class="auto-tag">auto</span></label><input type="number" id="r-benef-${w.id}" value="${rd.benef||''}" placeholder="se calcula solo" step="5"></div>
+          ${!w.noDir?`<div class="real-field"><label>Directos hechos</label><input type="number" id="r-ndir-${w.id}" value="${rd.ndir||''}" min="0" max="10" placeholder="ej: 2"></div>`:''}
         </div>
         <details style="margin-bottom:10px"><summary style="cursor:pointer;font-size:.72em;color:var(--t3);padding:5px 0">▸ Más detalles (opcional — audiencia, redes, multiplicador)</summary>
         <div class="real-grid" style="margin-top:8px">
@@ -1107,7 +1109,7 @@ function copyPrev(id){
   for(let j=i-1;j>=0;j--){const r0=REAL[allWeeks[j].id];if(r0&&(r0.ventas||r0.benef||r0.est_stock_real)){src=r0;break;}}
   if(!src){alert('No hay ninguna semana anterior con datos.');return;}
   const st=(f,v)=>{const e=document.getElementById(f+'-'+id);if(e&&v!=null&&v!=='')e.value=v;};
-  st('r-stock',src.est_stock_real);st('r-ventas',src.ventas);st('r-benef',src.benef);st('r-mult',src.mult_real);
+  st('r-stock',src.est_stock_real);st('r-ventas',src.ventas);st('r-benef',src.benef);st('r-ndir',src.ndir);st('r-mult',src.mult_real);
   st('r-aud',src.audiencia_media);st('r-pico',src.pico);st('r-pct',src.pct_directo);st('r-val',src.valoracion);
   st('r-yt',src.yt_subs);st('r-ig',src.ig_subs);
   alert('Copiados los datos de la última semana registrada. Corrige lo que haya cambiado y pulsa «Guardar».');
@@ -1119,6 +1121,7 @@ function saveReal(wId){
     est_stock_real:gv(`r-stock-${wId}`),
     ventas:gv(`r-ventas-${wId}`),
     benef:gv(`r-benef-${wId}`),
+    ndir:gv(`r-ndir-${wId}`),
     mult_real:gv(`r-mult-${wId}`),
     audiencia_media:gv(`r-aud-${wId}`),
     pico:gv(`r-pico-${wId}`),
