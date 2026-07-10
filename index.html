@@ -492,7 +492,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ac)!impo
     <button class="tab" data-t="check" onclick="sw('check',this)"><span class="ti">✓</span>Checklist</button>
     <button class="tab" data-t="cfg" onclick="sw('cfg',this)"><span class="ti">⚙</span>Config</button>
   </nav>
-  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v70</div>
+  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v72</div>
 </aside>
 <main class="content">
 
@@ -771,6 +771,7 @@ const CHECK_DEFAULT=[
 let BREAKS=[],CONTENT=[],CLIENTES=[],INV=[],DIRLOG=[],HUCHA=[],GASTOS=[],GEXTRA=[],NOTAS=[];
 let PAGADO={};
 let REPMES={};
+let REPSAVED={};
 let SPLIT=[{n:'Reinversión en stock',p:60},{n:'Sueldo / ocio',p:25},{n:'Colchón emergencia',p:15}];
 let REPHIST=[]; // [{id,fecha,mes,base,cats:[{n,p,eur}]}]
 let calY=2028,calM=0;
@@ -798,6 +799,7 @@ function save(){
     LS.set('tcg_notas',JSON.stringify(NOTAS));
     LS.set('tcg_pagado',JSON.stringify(PAGADO));
     LS.set('tcg_repmes',JSON.stringify(REPMES));
+    LS.set('tcg_repsaved',JSON.stringify(REPSAVED));
     LS.set('tcg_hucha',JSON.stringify(HUCHA));
     LS.set('tcg_split',JSON.stringify(SPLIT));
     LS.set('tcg_rephist',JSON.stringify(REPHIST));
@@ -828,6 +830,7 @@ function load(){
     const nz=LS.get('tcg_notas');if(nz)NOTAS=JSON.parse(nz);
     const pg=LS.get('tcg_pagado');if(pg)PAGADO=JSON.parse(pg);
     const rm=LS.get('tcg_repmes');if(rm)REPMES=JSON.parse(rm);
+    const rsv=LS.get('tcg_repsaved');if(rsv)REPSAVED=JSON.parse(rsv);
     const s2=LS.get('tcg_split');if(s2)SPLIT=JSON.parse(s2);
     const rh=LS.get('tcg_rephist');if(rh)REPHIST=JSON.parse(rh);
   }catch(e){}
@@ -1181,7 +1184,7 @@ function renderDash(){
     {l:'Beneficio neto real',v:fmt(totalBenefReal)+'€',sub:`Estimado: ~${fmt(totalBenefEst)}€`,c:'var(--g)'},
     {l:'Próximo plazo fiscal',v:nd?nd.plazo:'—',sub:nd?nd.lbl:'Fuera del plan',c:'var(--ac)'},
     {l:'Multiplicador medio real',v:avgMult?fmtD(avgMult):'—',sub:`Estimado: ×${CFG.mult}`,c:avgMult>=CFG.mult?'var(--g)':'var(--re)'},
-    {l:'Audiencia media directos',v:avgAud?Math.round(avgAud)+'':'—',sub:'Por directo',c:'var(--y)'},
+    {l:'Beneficio limpio final',v:(function(){try{var Q=computeQuarters();var qr=Q.filter(function(q){return q.origen==='cerrado'||q.origen==='manual';});return fmt(qr.reduce(function(a,q){return a+(q.rend||0)-(q.p130||0);},0))+'€';}catch(e){return '—';}})(),sub:'tras IVA, autónomos e IRPF (meses cerrados)',c:'var(--g)'},
     {l:'Semanas con datos reales',v:allReal.length,sub:`de ${allWeeks.filter(w=>!w.noDir).length} semanas totales`,c:'var(--t1)'},
     {l:'Ventas en directos',v:fmt((typeof DIRLOG!=='undefined'?DIRLOG:[]).reduce((a,d)=>a+(d.ventas||0),0))+'€',sub:`${(typeof DIRLOG!=='undefined'?DIRLOG:[]).length} directos registrados`,c:'var(--g)'},
     {l:'A reservar para Hacienda',v:(function(){try{var Q=computeQuarters();var qr=Q.filter(function(q){return q.origen==='cerrado'||q.origen==='manual';});return fmt(qr.reduce(function(a,q){return a+(q.iva||0)+(q.p130||0)+(q.cuotas||0);},0))+'€';}catch(e){return '—';}})(),sub:(function(){try{var Q=computeQuarters();var qr=Q.filter(function(q){return q.origen==='cerrado'||q.origen==='manual';});var lim=qr.reduce(function(a,q){return a+(q.rend||0)-(q.p130||0);},0);return 'IVA+IRPF+autón (meses cerrados) · te quedan ~'+fmt(lim)+'€ limpios';}catch(e){return '';}})(),c:'var(--re)'},
@@ -1961,7 +1964,7 @@ function exportFiscalPDF(){
   setTimeout(()=>{try{w.focus();w.print();}catch(e){}},500);
 }
 function exportData(){
-  const data={app:'TheCardGirl Planner',version:6,exported:new Date().toISOString(),cfg:CFG,meses:MESES,real:REAL,cal:CAL,pedidos:PEDIDOS,fiscal:FISCAL,check:CHECK,breaks:BREAKS,content:CONTENT,clientes:CLIENTES,inv:INV,dirlog:DIRLOG,hucha:HUCHA,split:SPLIT,rephist:REPHIST,gastos:GASTOS,gextra:GEXTRA,notas:NOTAS,pagado:PAGADO,repmes:REPMES};
+  const data={app:'TheCardGirl Planner',version:6,exported:new Date().toISOString(),cfg:CFG,meses:MESES,real:REAL,cal:CAL,pedidos:PEDIDOS,fiscal:FISCAL,check:CHECK,breaks:BREAKS,content:CONTENT,clientes:CLIENTES,inv:INV,dirlog:DIRLOG,hucha:HUCHA,split:SPLIT,rephist:REPHIST,gastos:GASTOS,gextra:GEXTRA,notas:NOTAS,pagado:PAGADO,repmes:REPMES,repsaved:REPSAVED};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
@@ -1979,7 +1982,7 @@ function importData(input){
       const d=JSON.parse(e.target.result);
       if(!d.cfg||!d.meses){alert('Archivo no válido: no parece un backup del planner.');input.value='';return;}
       if(!confirm('Esto REEMPLAZARÁ todos los datos actuales por los del backup ('+(d.exported?d.exported.split('T')[0]:'fecha desconocida')+'). ¿Continuar?')){input.value='';return;}
-      CFG=d.cfg;MESES=d.meses;REAL=d.real||{};CAL=d.cal||{};PEDIDOS=d.pedidos||[];FISCAL=d.fiscal||{};CHECK=d.check||JSON.parse(JSON.stringify(CHECK_DEFAULT));BREAKS=d.breaks||[];CONTENT=d.content||[];CLIENTES=d.clientes||[];INV=d.inv||[];DIRLOG=d.dirlog||[];HUCHA=d.hucha||[];GASTOS=d.gastos||[];GEXTRA=d.gextra||[];NOTAS=d.notas||[];PAGADO=d.pagado||{};REPMES=d.repmes||{};if(d.split)SPLIT=d.split;REPHIST=d.rephist||[];
+      CFG=d.cfg;MESES=d.meses;REAL=d.real||{};CAL=d.cal||{};PEDIDOS=d.pedidos||[];FISCAL=d.fiscal||{};CHECK=d.check||JSON.parse(JSON.stringify(CHECK_DEFAULT));BREAKS=d.breaks||[];CONTENT=d.content||[];CLIENTES=d.clientes||[];INV=d.inv||[];DIRLOG=d.dirlog||[];HUCHA=d.hucha||[];GASTOS=d.gastos||[];GEXTRA=d.gextra||[];NOTAS=d.notas||[];PAGADO=d.pagado||{};REPMES=d.repmes||{};REPSAVED=d.repsaved||{};if(d.split)SPLIT=d.split;REPHIST=d.rephist||[];
       save();renderCrono();renderDash();renderMcfgs();renderPreview();renderHoy();
       alert('Backup restaurado correctamente.');
     }catch(err){alert('Error al leer el archivo: '+err.message);}
@@ -2133,6 +2136,7 @@ function renderExtras(){
   </div>`;
 }
 function mesLimpio(mk){var mi=MESES.findIndex(function(m){return mid(m.y,m.m)===mk;});var r=mi>=0?mesRealTotals(mi):{v:0,c:0};var margin=(r.v||0)-(r.c||0);var iva=Math.max(0,Math.round(margin*CFG.iva/121));var aut=Math.round(CFG.reta||0)+Math.round(CFG.fijo||0);var gf=GASTOS.reduce(function(a,g){return a+(+g.importe||0);},0);var ge=GEXTRA.filter(function(g){return (g.wid||'').slice(0,7)===mk;}).reduce(function(a,g){return a+(+g.importe||0);},0);var irpf=Math.round(Math.max(0,(margin-iva)-aut-gf-ge)*0.20);return Math.max(0,margin-iva-aut-gf-ge-irpf);}
+function repSave(mk){REPSAVED[mk]=true;save();renderRepAdv();}
 function addRepCat(mk){REPMES[mk]=REPMES[mk]||[];REPMES[mk].push({n:'Nueva categoría',p:0});save();renderRepAdv();}
 function delRepCat(mk,i){REPMES[mk].splice(i,1);save();renderRepAdv();}
 function updRepCat(mk,i,f,v){REPMES[mk]=REPMES[mk]||[];if(!REPMES[mk][i])return;REPMES[mk][i][f]=f==='p'?(parseFloat(v)||0):(v||'—');save();renderRepAdv();}
@@ -2140,16 +2144,18 @@ function renderRepAdv(){
   var el=document.getElementById('rep-adv');if(!el)return;
   var closed=(function(){try{return JSON.parse(LS.get('tcg_closed')||'[]');}catch(e){return[];}})().slice().sort();
   if(!closed.length){el.innerHTML='<div style="font-size:.75em;color:var(--t3);padding:16px;background:var(--s1);border:1px solid var(--bd);border-radius:12px">Aun no has cerrado ningun mes. Cierra un mes en el Cronograma y aqui podras repartir su beneficio limpio.</div>';return;}
-  var tot={};var cards='';
+  var tot={};var anySaved=false;var cards='';
   closed.forEach(function(mk){
     var lim=mesLimpio(mk);
     if(!REPMES[mk]||!REPMES[mk].length){REPMES[mk]=SPLIT.map(function(c){return {n:c.n,p:+c.p||0};});}
     var cats=REPMES[mk];var tp=cats.reduce(function(a,c){return a+(+c.p||0);},0);
+    var saved=!!REPSAVED[mk];if(saved)anySaved=true;
     var m=MESES.find(function(x){return mid(x.y,x.m)===mk;});var lbl=m?m.label:mk;
-    var rows=cats.map(function(c,i){var eur=Math.round(lim*(+c.p||0)/100);tot[c.n]=(tot[c.n]||0)+eur;return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px"><input type="text" value="'+(c.n||'')+'" onchange="updRepCat(\''+mk+'\','+i+',\'n\',this.value)" style="flex:1;border:1px solid var(--bd);border-radius:7px;padding:5px 8px;font:inherit;font-size:.78em"><input type="number" value="'+(c.p||0)+'" onchange="updRepCat(\''+mk+'\','+i+',\'p\',this.value)" style="width:54px;border:1px solid var(--bd);border-radius:7px;padding:5px 6px;font:inherit;font-size:.78em;text-align:right">%<span style="width:74px;text-align:right;font-size:.78em;font-weight:700;color:var(--g)">'+fmt(eur)+'€</span><span onclick="delRepCat(\''+mk+'\','+i+')" style="color:var(--re);cursor:pointer">✕</span></div>';}).join('');
-    cards+='<div style="background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:var(--sh)"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px"><strong style="font-size:.92em">'+lbl+'</strong><span style="font-size:.78em;color:var(--g);font-weight:700">Beneficio limpio: '+fmt(lim)+'€</span></div>'+rows+'<div style="display:flex;justify-content:space-between;font-size:.7em;color:'+(tp===100?'var(--g)':'var(--y)')+';margin:8px 0;border-top:1px solid var(--bd);padding-top:6px"><span>Total repartido</span><strong>'+tp+'% '+(tp===100?'✓':'⚠ deben sumar 100')+'</strong></div><button class="btn-sm" onclick="addRepCat(\''+mk+'\')">+ Añadir categoria</button></div>';
+    var rows=cats.map(function(c,i){var eur=Math.round(lim*(+c.p||0)/100);return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px"><input type="text" value="'+(c.n||'')+'" onchange="updRepCat(\''+mk+'\','+i+',\'n\',this.value)" style="flex:1;border:1px solid var(--bd);border-radius:7px;padding:5px 8px;font:inherit;font-size:.78em"><input type="number" value="'+(c.p||0)+'" onchange="updRepCat(\''+mk+'\','+i+',\'p\',this.value)" style="width:54px;border:1px solid var(--bd);border-radius:7px;padding:5px 6px;font:inherit;font-size:.78em;text-align:right">%<span style="width:74px;text-align:right;font-size:.78em;font-weight:700;color:var(--g)">'+fmt(eur)+'€</span><span onclick="delRepCat(\''+mk+'\','+i+')" style="color:var(--re);cursor:pointer">✕</span></div>';}).join('');
+    if(saved){cats.forEach(function(c){tot[c.n]=(tot[c.n]||0)+Math.round(lim*(+c.p||0)/100);});}
+    cards+='<div style="background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:var(--sh)"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px"><strong style="font-size:.92em">'+lbl+(saved?' <span style="font-size:.7em;color:var(--g);font-weight:700">✓ guardado</span>':'')+'</strong><span style="font-size:.78em;color:var(--g);font-weight:700">Beneficio limpio: '+fmt(lim)+'€</span></div>'+rows+'<div style="display:flex;justify-content:space-between;font-size:.7em;color:'+(tp===100?'var(--g)':'var(--y)')+';margin:8px 0;border-top:1px solid var(--bd);padding-top:6px"><span>Total repartido</span><strong>'+tp+'% '+(tp===100?'✓':'⚠ deben sumar 100')+'</strong></div><div style="display:flex;gap:8px;margin-top:8px"><button class="btn-sm" onclick="addRepCat(\''+mk+'\')">+ Añadir categoria</button><button class="btn-sm primary" onclick="repSave(\''+mk+'\')">'+(saved?'✓ Guardado':'💾 Guardar reparto')+'</button></div></div>';
   });
-  var totHtml='<div style="background:var(--sdb);color:#fff;border-radius:12px;padding:16px;margin-bottom:14px"><div style="font-size:.68em;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--sdt);margin-bottom:10px">Acumulado por categoria (todos los meses)</div>'+Object.keys(tot).map(function(n){return '<div style="display:flex;justify-content:space-between;font-size:.85em;margin-bottom:6px"><span style="color:var(--sdt)">'+n+'</span><strong style="color:#e6c079">'+fmt(tot[n])+'€</strong></div>';}).join('')+'</div>';
+  var totHtml=anySaved?('<div style="background:var(--sdb);color:#fff;border-radius:12px;padding:16px;margin-bottom:14px"><div style="font-size:.68em;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--sdt);margin-bottom:10px">Acumulado por categoria (meses guardados)</div>'+Object.keys(tot).map(function(n){return '<div style="display:flex;justify-content:space-between;font-size:.85em;margin-bottom:6px"><span style="color:var(--sdt)">'+n+'</span><strong style="color:#e6c079">'+fmt(tot[n])+'€</strong></div>';}).join('')+'</div>'):'<div style="font-size:.72em;color:var(--t3);padding:12px 14px;background:var(--s1);border:1px solid var(--bd);border-radius:12px;margin-bottom:14px">Guarda el reparto de un mes (boton 💾) para ver aqui el acumulado por categoria.</div>';
   el.innerHTML='<div style="font-size:.7em;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.09em;margin:6px 2px 10px">Reparto mes a mes</div>'+totHtml+cards;
 }
 function renderDyB(){
