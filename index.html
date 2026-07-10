@@ -492,7 +492,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ac)!impo
     <button class="tab" data-t="check" onclick="sw('check',this)"><span class="ti">✓</span>Checklist</button>
     <button class="tab" data-t="cfg" onclick="sw('cfg',this)"><span class="ti">⚙</span>Config</button>
   </nav>
-  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v66</div>
+  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v67</div>
 </aside>
 <main class="content">
 
@@ -1181,7 +1181,7 @@ function renderDash(){
     {l:'Audiencia media directos',v:avgAud?Math.round(avgAud)+'':'—',sub:'Por directo',c:'var(--y)'},
     {l:'Semanas con datos reales',v:allReal.length,sub:`de ${allWeeks.filter(w=>!w.noDir).length} semanas totales`,c:'var(--t1)'},
     {l:'Ventas en directos',v:fmt((typeof DIRLOG!=='undefined'?DIRLOG:[]).reduce((a,d)=>a+(d.ventas||0),0))+'€',sub:`${(typeof DIRLOG!=='undefined'?DIRLOG:[]).length} directos registrados`,c:'var(--g)'},
-    {l:'A reservar (IRPF + autónomos)',v:(function(){var mr=[...new Set(Object.keys(REAL).filter(function(k){return REAL[k]&&REAL[k].benef;}).map(function(k){return k.slice(0,7);}))].length;var au=Math.round((CFG.reta||0)*mr);var gf=GASTOS.reduce(function(a,g){return a+(+g.importe||0);},0)*mr;var ge=GEXTRA.reduce(function(a,g){return a+(+g.importe||0);},0);var ir=Math.round(Math.max(0,totalBenefReal-au-gf-ge)*0.20);return fmt(au+ir)+'€';})(),sub:'sale del beneficio · el IVA ya está descontado',c:'var(--re)'},
+    {l:'A reservar para Hacienda',v:(function(){try{var Q=computeQuarters();var qr=Q.filter(function(q){return q.origen==='real'||q.origen==='cerrado'||q.origen==='manual';});return fmt(qr.reduce(function(a,q){return a+(q.iva||0)+(q.p130||0)+(q.cuotas||0);},0))+'€';}catch(e){return '—';}})(),sub:'IVA + IRPF + autónomos (igual que Fiscal)',c:'var(--re)'},
   ].map(k=>`<div class="kcard"><div class="kcard-label">${k.l}</div><div class="kcard-val" style="color:${k.c}">${k.v}</div><div class="kcard-sub">${k.sub}</div></div>`).join('');
   (()=>{
     const el2=document.getElementById('dash-rvp');if(!el2)return;
@@ -1679,8 +1679,7 @@ function renderFiscal(){
         <div style="font-size:.66em;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em">${MNS[mm-1]} ${y2}</div>
         ${hv2?mdRow('Cierres'+(hu2.length>1?' ×'+hu2.length:''),hv2,hc2,'#34d399',''):''}
         ${r2.v?mdRow('Cronograma',r2.v,r2.c,'#60a5fa',''):''}
-        ${e2?mdRow('Plan',e2.v,e2.c,'#fbbf24','~'):''}
-        ${(!hv2&&!r2.v&&!e2)?'<div style="font-size:.72em;color:#6b7280;margin-top:7px">Sin datos</div>':''}
+        ${(!hv2&&!r2.v)?'<div style="font-size:.72em;color:#6b7280;margin-top:7px">Sin datos</div>':''}
       </div>`;}).join('')}</div>`;
     html+=`<div class="dash-box" style="margin-bottom:16px">
     <div class="box-title"><span>◫</span> Trimestres — lo que tocará pagar</div>
@@ -1874,7 +1873,7 @@ function computeQuarters(){
     const hV=hu.reduce((a2,h)=>a2+(h.ventas||0),0),hC=hu.reduce((a2,h)=>a2+(h.coste||0),0);
     const ventas=manual?(fs0.oV||0):(nR>0?rV:(hV>0?hV:eV)),coste=manual?(fs0.oC||0):(nR>0?rC:(hV>0?hC:eC));
     const margen=ventas-coste,iva=Math.max(0,Math.round(margen*CFG.iva/121));
-    const cuotas=Math.round(((CFG.reta||0)+(CFG.fijo||0))*qd.items.length);
+    const mReal=qM.filter(function(m){return _closed.includes(m)||Object.keys(REAL).some(function(k){return k.indexOf(m)===0&&REAL[k]&&REAL[k].benef;});}).length;const cuotas=Math.round(((CFG.reta||0)+(CFG.fijo||0))*(mReal||qd.items.length));
     const gq=fs0.gastos||0;
     const dua=PEDIDOS.filter(p=>qM.includes(p.mes_destino)).reduce((a,p)=>a+(p.coste_import||0),0);
     const gfij=GASTOS.reduce((a3,g3)=>a3+(+g3.importe||0),0)*qd.items.length;const gext=GEXTRA.filter(g3=>qM.includes((g3.wid||'').slice(0,7))).reduce((a3,g3)=>a3+(+g3.importe||0),0);const cerrado=qM.some(function(m){return _closed.includes(m);});const rend=(margen-iva)-cuotas-gq-dua-gfij-gext;
