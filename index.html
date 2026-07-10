@@ -492,7 +492,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ac)!impo
     <button class="tab" data-t="check" onclick="sw('check',this)"><span class="ti">✓</span>Checklist</button>
     <button class="tab" data-t="cfg" onclick="sw('cfg',this)"><span class="ti">⚙</span>Config</button>
   </nav>
-  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v64</div>
+  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v65</div>
 </aside>
 <main class="content">
 
@@ -1613,7 +1613,7 @@ function renderFiscal(){
   const mesesDir=[...new Set(DIRLOG.map(d=>(d.fecha||'').slice(0,7)).filter(Boolean))].length;
   const hA=mesesDir*Math.round(CFG.reta||0);
   const nd=nextDeadline();
-  const Q=computeQuarters();
+  const Q=computeQuarters();const _qR=Q.filter(function(q){return q.origen==='real'||q.origen==='cerrado'||q.origen==='manual';});const rIva2=_qR.reduce(function(a,q){return a+(q.iva||0);},0),rIrpf2=_qR.reduce(function(a,q){return a+(q.p130||0);},0),rAut2=_qR.reduce(function(a,q){return a+(q.cuotas||0);},0);
   const _n=new Date(),nowLbl=_n.getFullYear()+' T'+(Math.floor(_n.getMonth()/3)+1);
   const qNow=Q.find(q=>q.lbl===nowLbl)||Q[0];
   const seg=(id,lbl)=>`<button class="fseg ${fsTab===id?'on':''}" onclick="fsTab='${id}';renderFiscal()">${lbl}</button>`;
@@ -1623,12 +1623,12 @@ function renderFiscal(){
     <button class="btn-new" onclick="exportFiscalPDF()">🖨 Informe PDF</button>
   </div>
   <div class="fis-kpis">
-    <div class="fkpi k1"><div class="fk-l">Reservado a Hacienda</div><div class="fk-v">${fmt(hR+hI+hA)}€</div><div class="fk-s">IVA ${fmt(hR)} · IRPF ${fmt(hI)} · autón. ${fmt(hA)}</div></div>
+    <div class="fkpi k1"><div class="fk-l">Reservado a Hacienda</div><div class="fk-v">${fmt(rIva2+rIrpf2+rAut2)}€</div><div class="fk-s">IVA ${fmt(rIva2)} · IRPF ${fmt(rIrpf2)} · autón. ${fmt(rAut2)}</div></div>
     <div class="fkpi k2"><div class="fk-l">Próximo plazo</div><div class="fk-v" style="font-size:.95em">${nd?nd.plazo:'—'}</div><div class="fk-s">${nd?nd.lbl:'añade meses al plan'}</div></div>
     <div class="fkpi k3"><div class="fk-l">IVA del trimestre</div><div class="fk-v">${qNow?fmt(qNow.iva)+'€':'—'}</div><div class="fk-s">${qNow?qNow.lbl+' · '+qNow.origen:''}</div></div>
     <div class="fkpi k4"><div class="fk-l">Pago 130 del trimestre</div><div class="fk-v">~${qNow?fmt(qNow.p130)+'€':'—'}</div><div class="fk-s">20% del rendimiento acumulado</div></div>
   </div>
-  <div class="fseg-bar">${seg('cierre','💶 Cierre de ciclo')}${seg('trimestres','◫ Trimestres')}${seg('historial','📜 Historial')}${seg('info','ℹ️ Régimen y plazos')}${seg('reparto','💰 Reparto')}</div>`;
+  <div class="fseg-bar">${seg('trimestres','◫ Trimestres')}${seg('historial','📜 Historial')}${seg('info','ℹ️ Régimen y plazos')}${seg('reparto','💰 Reparto')}</div>`;
 
   if(fsTab==='cierre'){
     html+=`<div class="dash-box" style="margin-bottom:16px">
@@ -1775,7 +1775,7 @@ function huCalc(){
   spBase=mg-iva-irpf;const bi=document.getElementById('sp-base');if(bi)bi.value=spBase;refreshSplit();
   return{c,v,iva,irpf};
 }
-let spBase=0,huMes='',huC='',huV='',vdQ='',fsTab='cierre';
+let spBase=0,huMes='',huC='',huV='',vdQ='',fsTab='trimestres';
 let cronoHide=(LS.get('tcg_cronohide')??'1')==='1';
 function splitRowsHtml(){
   const tot=SPLIT.reduce((a,x)=>a+(+x.p||0),0);
