@@ -492,7 +492,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ac)!impo
     <button class="tab" data-t="check" onclick="sw('check',this)"><span class="ti">✓</span>Checklist</button>
     <button class="tab" data-t="cfg" onclick="sw('cfg',this)"><span class="ti">⚙</span>Config</button>
   </nav>
-  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v58</div>
+  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v59</div>
 </aside>
 <main class="content">
 
@@ -2343,7 +2343,7 @@ function renderReparto(){
 function sw(id,tab){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
-  document.getElementById('v-'+id).classList.add('on');
+  var _vw=document.getElementById('v-'+id);if(_vw)_vw.classList.add('on');
   tab.classList.add('on');
   if(id==='cal')renderCal();
   if(id==='cfg'){renderMcfgs();renderPreview();updBkLast();syncCfg();}
@@ -2395,7 +2395,7 @@ function updateAuthUI(u){var ls=document.getElementById('loginscreen');var el=do
 function skipLogin(){var ls=document.getElementById('loginscreen');if(ls)ls.style.display='none';}
 var _loggingIn=false;
 function cloudLogin(){if(typeof firebase==='undefined'){alert('Firebase no ha cargado (revisa tu conexion).');return;}if(_loggingIn)return;_loggingIn=true;firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(function(){_loggingIn=false;}).catch(function(e){_loggingIn=false;if(e&&(e.code==='auth/cancelled-popup-request'||e.code==='auth/popup-closed-by-user'))return;alert('Error al entrar: '+e.message);});}
-function cloudLogout(){cloudClearLocal();if(typeof firebase!=='undefined'){firebase.auth().signOut().then(function(){location.reload();});}else{location.reload();}}
+function cloudLogout(){try{clearTimeout(_cpT);}catch(e){}CLOUD_USER=null;cloudClearLocal();if(typeof firebase!=='undefined'){firebase.auth().signOut().then(function(){location.reload();});}else{location.reload();}}
 updateAuthUI(null);
 try{
   firebase.initializeApp(firebaseConfig);
