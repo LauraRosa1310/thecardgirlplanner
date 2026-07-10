@@ -492,7 +492,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ac)!impo
     <button class="tab" data-t="check" onclick="sw('check',this)"><span class="ti">✓</span>Checklist</button>
     <button class="tab" data-t="cfg" onclick="sw('cfg',this)"><span class="ti">⚙</span>Config</button>
   </nav>
-  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v69</div>
+  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v70</div>
 </aside>
 <main class="content">
 
@@ -1761,7 +1761,7 @@ function renderFiscal(){
     <strong>Aviso</strong> — el último mes de cada trimestre, la pestaña Hoy te recuerda mantener líquida la reserva. Consulta vinculante DGT: pendiente.</div></div>`;
   }
 
-  if(fsTab==='reparto'){spBase=(function(){try{var c=JSON.parse(LS.get('tcg_closed')||'[]');return c.reduce(function(a,mk){return a+mesLimpio(mk);},0);}catch(e){return 0;}})();html+=`<div style="background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:20px;box-shadow:var(--sh);margin-bottom:16px"><div style="font-size:.7em;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.09em;margin-bottom:5px">💰 Cómo repartes tu beneficio limpio</div><div style="font-size:.72em;color:var(--t3);margin-bottom:14px">Define tus categorías y % (deben sumar 100%). Se aplican a cada mes que cierras; luego ajustas el € de cada mes a mano si quieres. El € de aquí es sobre el limpio total acumulado (${fmt(spBase)}€).</div><div id="sp-rows">${splitRowsHtml()}</div><button class="btn-sm primary" onclick="addSplit()" style="margin-top:12px">+ Añadir categoría</button></div><div id="rep-adv"></div>`;}
+  if(fsTab==='reparto'){html+=`<div style="font-size:.72em;color:var(--t3);background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:14px 16px;margin-bottom:14px">💰 Cada mes que cierras aparece con su beneficio limpio. Decide <strong>en cada mes</strong> tus categorías y % (pueden ser distintas cada mes) — el € se calcula solo. Es organización, no afecta a los cálculos fiscales.</div><div id="rep-adv"></div>`;}
   document.getElementById('fisw').innerHTML=html;
   if(fsTab==='cierre')huCalc();
   if(fsTab==='reparto'&&typeof renderRepAdv==='function')renderRepAdv();
@@ -2133,22 +2133,23 @@ function renderExtras(){
   </div>`;
 }
 function mesLimpio(mk){var mi=MESES.findIndex(function(m){return mid(m.y,m.m)===mk;});var r=mi>=0?mesRealTotals(mi):{v:0,c:0};var margin=(r.v||0)-(r.c||0);var iva=Math.max(0,Math.round(margin*CFG.iva/121));var aut=Math.round(CFG.reta||0)+Math.round(CFG.fijo||0);var gf=GASTOS.reduce(function(a,g){return a+(+g.importe||0);},0);var ge=GEXTRA.filter(function(g){return (g.wid||'').slice(0,7)===mk;}).reduce(function(a,g){return a+(+g.importe||0);},0);var irpf=Math.round(Math.max(0,(margin-iva)-aut-gf-ge)*0.20);return Math.max(0,margin-iva-aut-gf-ge-irpf);}
-function updRepMes(mk,cat,val){REPMES[mk]=REPMES[mk]||{};REPMES[mk][cat]=parseFloat(val)||0;save();renderRepAdv();}
+function addRepCat(mk){REPMES[mk]=REPMES[mk]||[];REPMES[mk].push({n:'Nueva categoría',p:0});save();renderRepAdv();}
+function delRepCat(mk,i){REPMES[mk].splice(i,1);save();renderRepAdv();}
+function updRepCat(mk,i,f,v){REPMES[mk]=REPMES[mk]||[];if(!REPMES[mk][i])return;REPMES[mk][i][f]=f==='p'?(parseFloat(v)||0):(v||'—');save();renderRepAdv();}
 function renderRepAdv(){
   var el=document.getElementById('rep-adv');if(!el)return;
   var closed=(function(){try{return JSON.parse(LS.get('tcg_closed')||'[]');}catch(e){return[];}})().slice().sort();
-  if(!closed.length){el.innerHTML='<div style="font-size:.75em;color:var(--t3);padding:16px;background:var(--s1);border:1px solid var(--bd);border-radius:12px">Aun no has cerrado ningun mes. Cierra un mes en el Cronograma y aqui aparecera su beneficio limpio para repartir.</div>';return;}
-  var tot={};SPLIT.forEach(function(c){tot[c.n]=0;});
-  var cards='';
+  if(!closed.length){el.innerHTML='<div style="font-size:.75em;color:var(--t3);padding:16px;background:var(--s1);border:1px solid var(--bd);border-radius:12px">Aun no has cerrado ningun mes. Cierra un mes en el Cronograma y aqui podras repartir su beneficio limpio.</div>';return;}
+  var tot={};var cards='';
   closed.forEach(function(mk){
-    var lim=mesLimpio(mk);REPMES[mk]=REPMES[mk]||{};
-    SPLIT.forEach(function(c){if(REPMES[mk][c.n]===undefined)REPMES[mk][c.n]=Math.round(lim*(+c.p||0)/100);});
-    var sum=SPLIT.reduce(function(a,c){return a+(+REPMES[mk][c.n]||0);},0);
+    var lim=mesLimpio(mk);
+    if(!REPMES[mk]||!REPMES[mk].length){REPMES[mk]=SPLIT.map(function(c){return {n:c.n,p:+c.p||0};});}
+    var cats=REPMES[mk];var tp=cats.reduce(function(a,c){return a+(+c.p||0);},0);
     var m=MESES.find(function(x){return mid(x.y,x.m)===mk;});var lbl=m?m.label:mk;
-    cards+='<div style="background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:var(--sh)"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px"><strong style="font-size:.9em">'+lbl+'</strong><span style="font-size:.78em;color:var(--g);font-weight:700">Limpio: '+fmt(lim)+'€</span></div>'+SPLIT.map(function(c,i){return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><div style="background:'+spCol(c,i)+';width:10px;height:10px;border-radius:50%"></div><span style="flex:1;font-size:.76em">'+c.n+'</span><input type="number" value="'+(REPMES[mk][c.n]||0)+'" onchange="updRepMes(\''+mk+'\',\''+(c.n||'').replace(/[^A-Za-z0-9 ]/g,'')+'\',this.value)" style="width:90px;border:1px solid var(--bd);border-radius:7px;padding:5px 8px;font:inherit;font-size:.8em;text-align:right">€</div>';}).join('')+'<div style="display:flex;justify-content:space-between;font-size:.7em;color:'+(Math.abs(sum-lim)<2?'var(--g)':'var(--y)')+';margin-top:6px;border-top:1px solid var(--bd);padding-top:6px"><span>Repartido</span><strong>'+fmt(sum)+'€ de '+fmt(lim)+'€ '+(Math.abs(sum-lim)<2?'✓':'⚠ ajusta')+'</strong></div></div>';
-    SPLIT.forEach(function(c){tot[c.n]=(tot[c.n]||0)+(+REPMES[mk][c.n]||0);});
+    var rows=cats.map(function(c,i){var eur=Math.round(lim*(+c.p||0)/100);tot[c.n]=(tot[c.n]||0)+eur;return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px"><input type="text" value="'+(c.n||'')+'" onchange="updRepCat(\''+mk+'\','+i+',\'n\',this.value)" style="flex:1;border:1px solid var(--bd);border-radius:7px;padding:5px 8px;font:inherit;font-size:.78em"><input type="number" value="'+(c.p||0)+'" onchange="updRepCat(\''+mk+'\','+i+',\'p\',this.value)" style="width:54px;border:1px solid var(--bd);border-radius:7px;padding:5px 6px;font:inherit;font-size:.78em;text-align:right">%<span style="width:74px;text-align:right;font-size:.78em;font-weight:700;color:var(--g)">'+fmt(eur)+'€</span><span onclick="delRepCat(\''+mk+'\','+i+')" style="color:var(--re);cursor:pointer">✕</span></div>';}).join('');
+    cards+='<div style="background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:var(--sh)"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px"><strong style="font-size:.92em">'+lbl+'</strong><span style="font-size:.78em;color:var(--g);font-weight:700">Beneficio limpio: '+fmt(lim)+'€</span></div>'+rows+'<div style="display:flex;justify-content:space-between;font-size:.7em;color:'+(tp===100?'var(--g)':'var(--y)')+';margin:8px 0;border-top:1px solid var(--bd);padding-top:6px"><span>Total repartido</span><strong>'+tp+'% '+(tp===100?'✓':'⚠ deben sumar 100')+'</strong></div><button class="btn-sm" onclick="addRepCat(\''+mk+'\')">+ Añadir categoria</button></div>';
   });
-  var totHtml='<div style="background:var(--sdb);color:#fff;border-radius:12px;padding:16px;margin-bottom:14px"><div style="font-size:.68em;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--sdt);margin-bottom:10px">Acumulado por categoria (todos los meses)</div>'+SPLIT.map(function(c){return '<div style="display:flex;justify-content:space-between;font-size:.85em;margin-bottom:6px"><span style="color:var(--sdt)">'+c.n+'</span><strong style="color:#e6c079">'+fmt(tot[c.n]||0)+'€</strong></div>';}).join('')+'</div>';
+  var totHtml='<div style="background:var(--sdb);color:#fff;border-radius:12px;padding:16px;margin-bottom:14px"><div style="font-size:.68em;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--sdt);margin-bottom:10px">Acumulado por categoria (todos los meses)</div>'+Object.keys(tot).map(function(n){return '<div style="display:flex;justify-content:space-between;font-size:.85em;margin-bottom:6px"><span style="color:var(--sdt)">'+n+'</span><strong style="color:#e6c079">'+fmt(tot[n])+'€</strong></div>';}).join('')+'</div>';
   el.innerHTML='<div style="font-size:.7em;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.09em;margin:6px 2px 10px">Reparto mes a mes</div>'+totHtml+cards;
 }
 function renderDyB(){
