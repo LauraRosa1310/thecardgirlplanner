@@ -492,7 +492,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ac)!impo
     <button class="tab" data-t="check" onclick="sw('check',this)"><span class="ti">✓</span>Checklist</button>
     <button class="tab" data-t="cfg" onclick="sw('cfg',this)"><span class="ti">⚙</span>Config</button>
   </nav>
-  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v61</div>
+  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v62</div>
 </aside>
 <main class="content">
 
@@ -1028,7 +1028,7 @@ function renderCrono(){
             <span class="wk-dates">${w.dates}${isNow?' <span class="now-tag">● HOY</span>':''}</span>
           </div>
           <div class="wk-info">
-            <div class="wk-title">${w.title}</div>
+            <div class="wk-title">${(rd.ndir&&!w.noDir)?`${rd.ndir} directo${rd.ndir==1?'':'s'} hecho${rd.ndir==1?'':'s'}`:w.title}</div>
             <div class="wk-sub">${w.subtitle}</div>
           </div>
           <div class="wk-right">
