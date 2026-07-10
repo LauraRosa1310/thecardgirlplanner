@@ -492,7 +492,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ac)!impo
     <button class="tab" data-t="check" onclick="sw('check',this)"><span class="ti">✓</span>Checklist</button>
     <button class="tab" data-t="cfg" onclick="sw('cfg',this)"><span class="ti">⚙</span>Config</button>
   </nav>
-  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v60</div>
+  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v61</div>
 </aside>
 <main class="content">
 
@@ -984,6 +984,7 @@ function renderCrono(){
           <div class="diff-row"><span class="dk">Ventas reales</span><span class="dv neu">${fmt(rd.ventas)}€</span></div>
           ${rd.ndir?`<div class="diff-row"><span class="dk">Directos hechos</span><span class="dv neu">${rd.ndir}</span></div>`:''}
           <div class="diff-row"><span class="dk">Multiplicador real</span><span class="dv neu">${fmtD(rd.ventas&&rd.est_stock_real?rd.ventas/rd.est_stock_real:null)}</span></div>
+          ${(rd.ventas&&rd.est_stock_real)?`<div class="diff-row"><span class="dk">Margen bruto (ventas − stock)</span><span class="dv neu">${fmt(rd.ventas-rd.est_stock_real)}€</span></div><div class="diff-row"><span class="dk">− IVA REBU (a Hacienda)</span><span class="dv neg">−${fmt(Math.max(0,(rd.ventas-rd.est_stock_real)-benefReal))}€</span></div>`:''}
           <div class="diff-row"><span class="dk">Beneficio neto real</span><span class="dv ${benefReal>=w.est_benef?'pos':'neg'}">${fmt(benefReal)}€</span></div>
           <div class="diff-row"><span class="dk">Diferencia vs estimado</span><span class="dv ${diff>=0?'pos':'neg'}">${diff>=0?'+':''}${fmt(diff)}€</span></div>
           ${rd.audiencia_media?`<div class="diff-row"><span class="dk">Audiencia media directo</span><span class="dv neu">${rd.audiencia_media}</span></div>`:''}
