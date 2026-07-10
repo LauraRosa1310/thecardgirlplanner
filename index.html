@@ -492,7 +492,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ac)!impo
     <button class="tab" data-t="check" onclick="sw('check',this)"><span class="ti">✓</span>Checklist</button>
     <button class="tab" data-t="cfg" onclick="sw('cfg',this)"><span class="ti">⚙</span>Config</button>
   </nav>
-  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v60</div>
+  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v66</div>
 </aside>
 <main class="content">
 
@@ -508,7 +508,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ac)!impo
     <div style="margin-top:14px">
       <div class="dash-box" id="box-mes" style="margin-bottom:16px"><div class="box-title"><span>🗓</span> Mes en curso</div><div id="dash-mes"></div></div>
       <div class="dash-box" style="margin-bottom:16px"><div class="box-title"><span>📊</span> Beneficio semanal — plan vs real</div><div id="dash-chart"></div></div>
-      <div class="dash-box" style="margin-bottom:16px"><div class="box-title"><span>💰</span> Reparto del beneficio</div><div id="dash-reparto"></div></div>
+      
       <div class="dash-row">
         <div class="dash-box"><div class="box-title"><span>📈</span> Capital real vs plan</div><div class="progress-list" id="dash-capital"></div></div>
         <div class="dash-box"><div class="box-title"><span>⚠️</span> Alertas y estado</div><div class="alert-list" id="dash-alerts"></div></div>
@@ -984,6 +984,7 @@ function renderCrono(){
           <div class="diff-row"><span class="dk">Ventas reales</span><span class="dv neu">${fmt(rd.ventas)}€</span></div>
           ${rd.ndir?`<div class="diff-row"><span class="dk">Directos hechos</span><span class="dv neu">${rd.ndir}</span></div>`:''}
           <div class="diff-row"><span class="dk">Multiplicador real</span><span class="dv neu">${fmtD(rd.ventas&&rd.est_stock_real?rd.ventas/rd.est_stock_real:null)}</span></div>
+          ${(rd.ventas&&rd.est_stock_real)?`<div class="diff-row"><span class="dk">Margen bruto (ventas − stock)</span><span class="dv neu">${fmt(rd.ventas-rd.est_stock_real)}€</span></div><div class="diff-row"><span class="dk">− IVA REBU (a Hacienda)</span><span class="dv neg">−${fmt(Math.max(0,(rd.ventas-rd.est_stock_real)-benefReal))}€</span></div>`:''}
           <div class="diff-row"><span class="dk">Beneficio neto real</span><span class="dv ${benefReal>=w.est_benef?'pos':'neg'}">${fmt(benefReal)}€</span></div>
           <div class="diff-row"><span class="dk">Diferencia vs estimado</span><span class="dv ${diff>=0?'pos':'neg'}">${diff>=0?'+':''}${fmt(diff)}€</span></div>
           ${rd.audiencia_media?`<div class="diff-row"><span class="dk">Audiencia media directo</span><span class="dv neu">${rd.audiencia_media}</span></div>`:''}
@@ -1027,7 +1028,7 @@ function renderCrono(){
             <span class="wk-dates">${w.dates}${isNow?' <span class="now-tag">● HOY</span>':''}</span>
           </div>
           <div class="wk-info">
-            <div class="wk-title">${w.title}</div>
+            <div class="wk-title">${(rd.ndir&&!w.noDir)?`${rd.ndir} directo${rd.ndir==1?'':'s'} hecho${rd.ndir==1?'':'s'}`:w.title}</div>
             <div class="wk-sub">${w.subtitle}</div>
           </div>
           <div class="wk-right">
@@ -1180,6 +1181,7 @@ function renderDash(){
     {l:'Audiencia media directos',v:avgAud?Math.round(avgAud)+'':'—',sub:'Por directo',c:'var(--y)'},
     {l:'Semanas con datos reales',v:allReal.length,sub:`de ${allWeeks.filter(w=>!w.noDir).length} semanas totales`,c:'var(--t1)'},
     {l:'Ventas en directos',v:fmt((typeof DIRLOG!=='undefined'?DIRLOG:[]).reduce((a,d)=>a+(d.ventas||0),0))+'€',sub:`${(typeof DIRLOG!=='undefined'?DIRLOG:[]).length} directos registrados`,c:'var(--g)'},
+    {l:'A reservar (IRPF + autónomos)',v:(function(){var mr=[...new Set(Object.keys(REAL).filter(function(k){return REAL[k]&&REAL[k].benef;}).map(function(k){return k.slice(0,7);}))].length;var au=Math.round((CFG.reta||0)*mr);var gf=GASTOS.reduce(function(a,g){return a+(+g.importe||0);},0)*mr;var ge=GEXTRA.reduce(function(a,g){return a+(+g.importe||0);},0);var ir=Math.round(Math.max(0,totalBenefReal-au-gf-ge)*0.20);return fmt(au+ir)+'€';})(),sub:'sale del beneficio · el IVA ya está descontado',c:'var(--re)'},
   ].map(k=>`<div class="kcard"><div class="kcard-label">${k.l}</div><div class="kcard-val" style="color:${k.c}">${k.v}</div><div class="kcard-sub">${k.sub}</div></div>`).join('');
   (()=>{
     const el2=document.getElementById('dash-rvp');if(!el2)return;
@@ -1611,7 +1613,7 @@ function renderFiscal(){
   const mesesDir=[...new Set(DIRLOG.map(d=>(d.fecha||'').slice(0,7)).filter(Boolean))].length;
   const hA=mesesDir*Math.round(CFG.reta||0);
   const nd=nextDeadline();
-  const Q=computeQuarters();
+  const Q=computeQuarters();const _qR=Q.filter(function(q){return q.origen==='real'||q.origen==='cerrado'||q.origen==='manual';});const rIva2=_qR.reduce(function(a,q){return a+(q.iva||0);},0),rIrpf2=_qR.reduce(function(a,q){return a+(q.p130||0);},0),rAut2=_qR.reduce(function(a,q){return a+(q.cuotas||0);},0);
   const _n=new Date(),nowLbl=_n.getFullYear()+' T'+(Math.floor(_n.getMonth()/3)+1);
   const qNow=Q.find(q=>q.lbl===nowLbl)||Q[0];
   const seg=(id,lbl)=>`<button class="fseg ${fsTab===id?'on':''}" onclick="fsTab='${id}';renderFiscal()">${lbl}</button>`;
@@ -1621,12 +1623,12 @@ function renderFiscal(){
     <button class="btn-new" onclick="exportFiscalPDF()">🖨 Informe PDF</button>
   </div>
   <div class="fis-kpis">
-    <div class="fkpi k1"><div class="fk-l">Reservado a Hacienda</div><div class="fk-v">${fmt(hR+hI+hA)}€</div><div class="fk-s">IVA ${fmt(hR)} · IRPF ${fmt(hI)} · autón. ${fmt(hA)}</div></div>
+    <div class="fkpi k1"><div class="fk-l">Reservado a Hacienda</div><div class="fk-v">${fmt(rIva2+rIrpf2+rAut2)}€</div><div class="fk-s">IVA ${fmt(rIva2)} · IRPF ${fmt(rIrpf2)} · autón. ${fmt(rAut2)}</div></div>
     <div class="fkpi k2"><div class="fk-l">Próximo plazo</div><div class="fk-v" style="font-size:.95em">${nd?nd.plazo:'—'}</div><div class="fk-s">${nd?nd.lbl:'añade meses al plan'}</div></div>
     <div class="fkpi k3"><div class="fk-l">IVA del trimestre</div><div class="fk-v">${qNow?fmt(qNow.iva)+'€':'—'}</div><div class="fk-s">${qNow?qNow.lbl+' · '+qNow.origen:''}</div></div>
     <div class="fkpi k4"><div class="fk-l">Pago 130 del trimestre</div><div class="fk-v">~${qNow?fmt(qNow.p130)+'€':'—'}</div><div class="fk-s">20% del rendimiento acumulado</div></div>
   </div>
-  <div class="fseg-bar">${seg('cierre','💶 Cierre de ciclo')}${seg('trimestres','◫ Trimestres')}${seg('historial','📜 Historial')}${seg('info','ℹ️ Régimen y plazos')}</div>`;
+  <div class="fseg-bar">${seg('trimestres','◫ Trimestres')}${seg('historial','📜 Historial')}${seg('info','ℹ️ Régimen y plazos')}${seg('reparto','💰 Reparto')}</div>`;
 
   if(fsTab==='cierre'){
     html+=`<div class="dash-box" style="margin-bottom:16px">
@@ -1697,7 +1699,7 @@ function renderFiscal(){
           <div class="cf"><label>Gastos deducibles (€)</label><input type="number" value="${fs0.gastos||''}" placeholder="0" style="width:110px" onchange="updFisGasto('${q.key}',this.value)"></div>
           <label class="fis-chk"><input type="checkbox" ${fs0.p303?'checked':''} onchange="togFis('${q.key}','p303',this.checked)"> 303 presentado</label>
           <label class="fis-chk"><input type="checkbox" ${fs0.p130?'checked':''} onchange="togFis('${q.key}','p130',this.checked)"> 130 presentado</label>
-          <div style="font-size:.72em;color:var(--t3)">Cuotas + fijos: ${fmt(q.cuotas)}€ · DUA: ${fmt(q.dua)}€ · <strong>Plazo: ${q.plazo}</strong></div>
+          <div style="font-size:.72em;color:var(--t3)">Cuotas + fijos: ${fmt(q.cuotas)}€ · Gastos ded.: ${fmt(q.gastos)}€ · DUA: ${fmt(q.dua)}€ · <strong>Plazo: ${q.plazo}</strong></div>
         </div>
         <div style="margin-top:11px;border-top:1px dashed var(--bd);padding-top:8px">
           <div style="font-size:.66em;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px">Desglose por mes</div>
@@ -1757,6 +1759,7 @@ function renderFiscal(){
     <strong>Aviso</strong> — el último mes de cada trimestre, la pestaña Hoy te recuerda mantener líquida la reserva. Consulta vinculante DGT: pendiente.</div></div>`;
   }
 
+  if(fsTab==='reparto'){spBase=Math.max(0,Math.round(_qR.reduce(function(a,q){return a+(q.rend||0)-(q.p130||0);},0)));html+=`<div style="background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:20px;box-shadow:var(--sh)"><div style="font-size:.7em;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.09em;margin-bottom:5px">💰 Reparto del beneficio limpio</div><div style="font-size:.72em;color:var(--t3);margin-bottom:14px">Reparte lo que te queda tras Hacienda. Añade o quita categorías y ajusta los % (deben sumar 100%). Es organización, no afecta a los cálculos fiscales.</div><div class="cf" style="max-width:280px;margin-bottom:14px"><label>Importe a repartir (€)</label><input type="number" id="sp-base" value="${spBase}" oninput="spBase=parseFloat(this.value)||0;refreshSplit()"></div><div id="sp-rows">${splitRowsHtml()}</div><button class="btn-sm primary" onclick="addSplit()" style="margin-top:12px">+ Añadir categoría</button></div>`;}
   document.getElementById('fisw').innerHTML=html;
   if(fsTab==='cierre')huCalc();
 }
@@ -1771,7 +1774,7 @@ function huCalc(){
   spBase=mg-iva-irpf;const bi=document.getElementById('sp-base');if(bi)bi.value=spBase;refreshSplit();
   return{c,v,iva,irpf};
 }
-let spBase=0,huMes='',huC='',huV='',vdQ='',fsTab='cierre';
+let spBase=0,huMes='',huC='',huV='',vdQ='',fsTab='trimestres';
 let cronoHide=(LS.get('tcg_cronohide')??'1')==='1';
 function splitRowsHtml(){
   const tot=SPLIT.reduce((a,x)=>a+(+x.p||0),0);
@@ -1861,7 +1864,7 @@ function computeQuarters(){
   if(allWeeks.length===0)renderCrono();
   const qs={};MESES.forEach((mc,idx)=>{const q=Math.floor(mc.m/3)+1,k=mc.y+'-T'+q;(qs[k]=qs[k]||{key:k,y:mc.y,q,items:[]}).items.push({mc,idx});});
   [...HUCHA,...REPHIST].forEach(h=>{const m=h.mes||(h.fecha||'').slice(0,7);if(!m)return;const y=+m.slice(0,4),q=Math.floor((+m.slice(5,7)-1)/3)+1,k=y+'-T'+q;if(!qs[k])qs[k]={key:k,y,q,items:[]};});
-  const list=Object.values(qs).sort((a,b)=>a.y-b.y||a.q-b.q);const acum={};const out=[];
+  const list=Object.values(qs).sort((a,b)=>a.y-b.y||a.q-b.q);const acum={};const out=[];const _closed=(function(){try{return JSON.parse(LS.get('tcg_closed')||'[]');}catch(e){return [];}})();
   list.forEach(qd=>{
     let eV=0,eC=0,rV=0,rC=0,nR=0;
     qd.items.forEach(({mc,idx})=>{const e=mesEstTotals(mc);eV+=e.v;eC+=e.c;const r=mesRealTotals(idx);rV+=r.v;rC+=r.c;nR+=r.n;});
@@ -1874,10 +1877,10 @@ function computeQuarters(){
     const cuotas=Math.round(((CFG.reta||0)+(CFG.fijo||0))*qd.items.length);
     const gq=fs0.gastos||0;
     const dua=PEDIDOS.filter(p=>qM.includes(p.mes_destino)).reduce((a,p)=>a+(p.coste_import||0),0);
-    const rend=(margen-iva)-cuotas-gq-dua;
+    const gfij=GASTOS.reduce((a3,g3)=>a3+(+g3.importe||0),0)*qd.items.length;const gext=GEXTRA.filter(g3=>qM.includes((g3.wid||'').slice(0,7))).reduce((a3,g3)=>a3+(+g3.importe||0),0);const cerrado=qM.some(function(m){return _closed.includes(m);});const rend=(margen-iva)-cuotas-gq-dua-gfij-gext;
     acum[qd.y]=acum[qd.y]||{rend:0,pag:0};acum[qd.y].rend+=rend;
     const p130=Math.max(0,Math.round(acum[qd.y].rend*0.2-acum[qd.y].pag));acum[qd.y].pag+=p130;
-    out.push({key:qd.key,lbl:qd.y+' T'+qd.q,origen:manual?'manual':(nR>0?'real':(hV>0?'cierres':'estimado')),ventas,coste,margen,iva,cuotas,gq,dua,rend,p130,p303:!!fs0.p303,p130p:!!fs0.p130,plazo:plazo303(qd.y,qd.q)});
+    out.push({key:qd.key,lbl:qd.y+' T'+qd.q,origen:manual?'manual':(cerrado?'cerrado':(nR>0?'real':(hV>0?'cierres':'estimado'))),ventas,coste,margen,iva,cuotas,gq,dua,gastos:gq+gfij+gext,cerrado,rend,p130,p303:!!fs0.p303,p130p:!!fs0.p130,plazo:plazo303(qd.y,qd.q)});
   });
   return out;
 }
