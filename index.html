@@ -492,7 +492,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ac)!impo
     <button class="tab" data-t="check" onclick="sw('check',this)"><span class="ti">✓</span>Checklist</button>
     <button class="tab" data-t="cfg" onclick="sw('cfg',this)"><span class="ti">⚙</span>Config</button>
   </nav>
-  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v72</div>
+  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v74</div>
 </aside>
 <main class="content">
 
@@ -507,10 +507,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ac)!impo
     <summary>▸ Ver más análisis — gráficas, reparto, capital y redes</summary>
     <div style="margin-top:14px">
       <div class="dash-box" id="box-mes" style="margin-bottom:16px"><div class="box-title"><span>🗓</span> Mes en curso</div><div id="dash-mes"></div></div>
-      <div class="dash-box" style="margin-bottom:16px"><div class="box-title"><span>📊</span> Beneficio semanal — plan vs real</div><div id="dash-chart"></div></div>
+      
       
       <div class="dash-row">
-        <div class="dash-box"><div class="box-title"><span>📈</span> Capital real vs plan</div><div class="progress-list" id="dash-capital"></div></div>
+        
         <div class="dash-box"><div class="box-title"><span>⚠️</span> Alertas y estado</div><div class="alert-list" id="dash-alerts"></div></div>
       </div>
       <div class="dash-row">
@@ -1181,7 +1181,7 @@ function renderDash(){
   const nd=nextDeadline();
   document.getElementById('dash-kpis').innerHTML=[
     {l:'Capital actual',v:fmt(capitalReal)+'€',sub:`Plan: ~${fmt(capitalEst)}€`,c:'var(--g)'},
-    {l:'Beneficio neto real',v:fmt(totalBenefReal)+'€',sub:`Estimado: ~${fmt(totalBenefEst)}€`,c:'var(--g)'},
+    {l:'Beneficio bruto (margen)',v:(function(){try{var Q=computeQuarters();var qr=Q.filter(function(q){return q.origen==='cerrado'||q.origen==='manual';});return fmt(qr.reduce(function(a,q){return a+(q.margen||0);},0))+'€';}catch(e){return '—';}})(),sub:'ventas − coste · antes de impuestos',c:'var(--g)'},
     {l:'Próximo plazo fiscal',v:nd?nd.plazo:'—',sub:nd?nd.lbl:'Fuera del plan',c:'var(--ac)'},
     {l:'Multiplicador medio real',v:avgMult?fmtD(avgMult):'—',sub:`Estimado: ×${CFG.mult}`,c:avgMult>=CFG.mult?'var(--g)':'var(--re)'},
     {l:'Beneficio limpio final',v:(function(){try{var Q=computeQuarters();var qr=Q.filter(function(q){return q.origen==='cerrado'||q.origen==='manual';});return fmt(qr.reduce(function(a,q){return a+(q.rend||0)-(q.p130||0);},0))+'€';}catch(e){return '—';}})(),sub:'tras IVA, autónomos e IRPF (meses cerrados)',c:'var(--g)'},
@@ -1203,7 +1203,7 @@ function renderDash(){
 
   // Capital progress
   const pct=capitalEst>0?Math.min(100,Math.round(capitalReal/capitalEst*100)):0;
-  document.getElementById('dash-capital').innerHTML=`
+  var _dcap=document.getElementById('dash-capital');if(_dcap)_dcap.innerHTML=`
     <div class="prog-item">
       <div class="prog-label"><span>Capital real vs plan</span><strong>${fmt(capitalReal)}€ / ${fmt(capitalEst)}€</strong></div>
       <div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:${pct>=100?'var(--g)':pct>=80?'var(--y)':'var(--r)'}"></div></div>
@@ -2114,7 +2114,7 @@ function renderExtras(){
   const gfij=GASTOS.reduce((a,g)=>a+(+g.importe||0),0);
   const gexY=GEXTRA.filter(g=>(g.fecha||'').slice(0,4)==String(yr)).reduce((a,g)=>a+(+g.importe||0),0);
   const nMes=mesesD.length;const limpioY=benY-autY-irpfY-gfij*nMes-gexY;
-  const hucha=ivaY+irpfY+autY;const proj=nMes?Math.round(limpioY/nMes*12):0;
+  try{var _qh=computeQuarters().filter(function(q){return q.origen==='cerrado'||q.origen==='manual';});ivaY=_qh.reduce(function(a,q){return a+(q.iva||0);},0);irpfY=_qh.reduce(function(a,q){return a+(q.p130||0);},0);autY=_qh.reduce(function(a,q){return a+(q.cuotas||0);},0);}catch(e){}const hucha=ivaY+irpfY+autY;const proj=nMes?Math.round(limpioY/nMes*12):0;
   const mk=`${yr}-${pad(now.getMonth()+1)}`;const pm=new Date(yr,now.getMonth()-1,1);const pmk=`${pm.getFullYear()}-${pad(pm.getMonth()+1)}`;
   const cur=byMes[mk]||0,prev=byMes[pmk]||0;const dpct=prev?Math.round((cur-prev)/prev*100):null;
   const semMes=allWeeks.filter(w=>w.mesId===mk&&REAL[w.id]&&REAL[w.id].benef).map(w=>({d:w.dates,b:REAL[w.id].benef}));
