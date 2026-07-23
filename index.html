@@ -492,7 +492,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ac)!impo
     <button class="tab" data-t="check" onclick="sw('check',this)"><span class="ti">✓</span>Checklist</button>
     <button class="tab" data-t="cfg" onclick="sw('cfg',this)"><span class="ti">⚙</span>Config</button>
   </nav>
-  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v78</div>
+  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v79</div>
 </aside>
 <main class="content">
 
@@ -579,6 +579,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ac)!impo
       <div class="cf"><label>Cuota autónomos (€/mes)</label><input type="number" id="g-reta" value="275" step="10"></div>
       <div class="cf"><label>% Sueldo que te retiras</label><input type="number" id="g-sueldo" value="25" min="0" max="100" step="5"></div>
       <div class="cf"><label>Otros gastos fijos (€/mes)</label><input type="number" id="g-fijo" value="0" step="10"></div>
+      <div class="cf"><label>Comisión plataforma (%)</label><input type="number" id="g-comision" value="8" step="1" min="0" max="30"><div style="font-size:.62em;color:var(--t3);margin-top:4px;line-height:1.4">Ej.: Geek ~8%. Se puede activar o desactivar en cada directo (para ventas por fuera).</div></div>
     </div>
     <button class="btn-apply" style="margin-top:14px" onclick="applyAll()">Guardar cambios</button>
   </div>
@@ -892,11 +893,16 @@ function ensureMonths(){
 }
 function addReg(){
   var f=str('rg-fecha');if(!f){alert('Pon la fecha.');return;}
-  DIRLOG.unshift({id:Date.now(),fecha:f,tipo:str('rg-tipo'),cartas:num('rg-cartas'),stock:num('rg-gast'),ventas:num('rg-vend'),aud:num('rg-aud'),notas:str('rg-notas'),evento:''});
+  var cb=document.getElementById('rg-com');
+  DIRLOG.unshift({id:Date.now(),fecha:f,tipo:str('rg-tipo'),cartas:num('rg-cartas'),stock:num('rg-gast'),ventas:num('rg-vend'),aud:num('rg-aud'),
+    pico:num('rg-pico'),valoracion:num('rg-val'),pct_directo:num('rg-pct'),yt_subs:num('rg-yt'),ig_subs:num('rg-ig'),
+    com:cb?cb.checked:false,notas:str('rg-notas'),evento:''});
   ensureMonths();save();renderCrono();if(typeof renderDash==='function')renderDash();
-  ['rg-cartas','rg-gast','rg-vend','rg-aud','rg-notas'].forEach(function(i){var e=document.getElementById(i);if(e)e.value='';});
+  ['rg-cartas','rg-gast','rg-vend','rg-aud','rg-pico','rg-val','rg-pct','rg-yt','rg-ig','rg-notas'].forEach(function(i){var e=document.getElementById(i);if(e)e.value='';});
 }
 function delReg(id){if(!confirm('¿Eliminar este registro?'))return;DIRLOG=DIRLOG.filter(function(x){return x.id!==id;});save();renderCrono();if(typeof renderDash==='function')renderDash();}
+var TCOL={'Break':'#c2760f','Subasta':'#8b5cf6','Mixto':'#14b8a6','Venta directa':'#3b82f6'};
+function comEur(d){return (d&&d.com)?Math.round((d.ventas||0)*(CFG.comision||0)/100):0;}
 function renderCrono(){
   allWeeks=[];ensureMonths();
   var cm=document.getElementById('cmain');if(!cm)return;
@@ -905,36 +911,62 @@ function renderCrono(){
   var byM={};DIRLOG.forEach(function(d){var mk=(d.fecha||'').slice(0,7);if(!mk)return;(byM[mk]=byM[mk]||[]).push(d);});
   var months=Object.keys(byM).sort().reverse();
   var inp='padding:8px 10px;border:1px solid var(--bd);border-radius:8px;font-family:inherit;font-size:.9em;width:100%';
+  var fld=function(lbl,id,ph,t){return '<div class="cf"><label>'+lbl+'</label><input type="'+(t||'number')+'" id="'+id+'" placeholder="'+ph+'" style="'+inp+'"></div>';};
   var form='<div class="dash-box" style="margin-bottom:18px"><div class="box-title"><span>➕</span> Registrar lo que ha pasado</div>'
    +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:9px">'
    +'<div class="cf"><label>Fecha</label><input type="date" id="rg-fecha" value="'+todayStr()+'" style="'+inp+'"></div>'
    +'<div class="cf"><label>Tipo</label><select id="rg-tipo" style="'+inp+'"><option>Break</option><option>Subasta</option><option>Mixto</option><option>Venta directa</option></select></div>'
-   +'<div class="cf"><label>Nº cartas</label><input type="number" id="rg-cartas" placeholder="0" style="'+inp+'"></div>'
-   +'<div class="cf"><label>Gastado €</label><input type="number" id="rg-gast" placeholder="500" style="'+inp+'"></div>'
-   +'<div class="cf"><label>Vendido €</label><input type="number" id="rg-vend" placeholder="725" style="'+inp+'"></div>'
-   +'<div class="cf"><label>👥 Audiencia</label><input type="number" id="rg-aud" placeholder="40" style="'+inp+'"></div>'
+   +fld('Nº cartas','rg-cartas','0')+fld('Gastado €','rg-gast','500')+fld('Vendido €','rg-vend','725')+fld('👥 Audiencia','rg-aud','40')
    +'</div>'
-   +'<div class="cf" style="margin-top:9px"><label>Notas (opcional)</label><input type="text" id="rg-notas" placeholder="qué funcionó, mejores cartas…" style="'+inp+'"></div>'
+   +'<label style="display:flex;align-items:center;gap:8px;margin-top:11px;font-size:.78em;color:var(--t2);cursor:pointer"><input type="checkbox" id="rg-com" checked style="width:16px;height:16px;accent-color:var(--ac)"> Aplicar comisión de plataforma ('+(CFG.comision||8)+'%) — desmárcalo si la venta fue por fuera</label>'
+   +'<details style="margin-top:11px"><summary style="cursor:pointer;font-size:.76em;color:var(--t3);font-weight:600;list-style:none">▸ Más detalles — redes, audiencia y valoración</summary>'
+   +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:9px;margin-top:10px">'
+   +fld('Pico audiencia','rg-pico','78')+fld('Valoración /5','rg-val','4')+fld('% vendido directo','rg-pct','85')+fld('Subs YouTube','rg-yt','120')+fld('Seguidores IG','rg-ig','340')
+   +'</div></details>'
+   +'<div class="cf" style="margin-top:10px"><label>Notas (opcional)</label><input type="text" id="rg-notas" placeholder="qué funcionó, mejores cartas…" style="'+inp+'"></div>'
    +'<button class="btn-save" style="margin-top:12px" onclick="addReg()">+ Guardar registro</button></div>';
   var body='';
-  if(!months.length){body='<div class="empty-state" style="padding:26px;text-align:center;color:var(--t3);line-height:1.6">Aún no has registrado nada.<br>Cada vez que hagas un directo, break o subasta, apúntalo arriba y aquí verás tus totales reales por mes.</div>';}
+  if(!months.length){body='<div class="empty-state" style="padding:28px;text-align:center;color:var(--t3);line-height:1.6">Aún no has registrado nada.<br>Cada vez que hagas un directo, break o subasta, apúntalo arriba y aquí verás tu resumen del mes.</div>';}
+  var chip=function(ic,val,lbl,c){return '<div style="background:var(--s1);border:1px solid var(--bd);border-radius:11px;padding:9px 13px;text-align:center;min-width:72px"><div style="font-size:1.15em;font-weight:800;color:'+(c||'var(--t1)')+'">'+val+'</div><div style="font-size:.58em;color:var(--t3);text-transform:uppercase;letter-spacing:.03em;margin-top:2px">'+ic+' '+lbl+'</div></div>';};
+  var mini=function(lbl,val,c){return '<div style="text-align:center"><div style="font-size:1.05em;font-weight:800;color:'+c+'">'+val+'</div><div style="font-size:.6em;color:var(--t3);text-transform:uppercase;margin-top:1px">'+lbl+'</div></div>';};
   months.forEach(function(mk){
     var list=byM[mk].slice().sort(function(a,b){return (a.fecha||'')<(b.fecha||'')?1:-1;});
     var y=+mk.slice(0,4),m=+mk.slice(5,7)-1;var label=mLabel(y,m);
-    var rV=0,rC=0;list.forEach(function(d){rV+=(d.ventas||0);rC+=(d.stock||0);});
+    var rV=0,rC=0,comisM=0,multN=0,multS=0,audN=0,audS=0,picoMax=0,valN=0,valS=0,pctN=0,pctS=0,ytLast=0,igLast=0,nDir=0;
+    list.forEach(function(d){
+      rV+=(d.ventas||0);rC+=(d.stock||0);comisM+=comEur(d);
+      if(d.tipo!=='Venta directa')nDir++;
+      if(d.ventas&&d.stock){multS+=d.ventas/d.stock;multN++;}
+      if(d.aud){audS+=d.aud;audN++;}
+      if(d.pico&&d.pico>picoMax)picoMax=d.pico;
+      if(d.valoracion){valS+=d.valoracion;valN++;}
+      if(d.pct_directo){pctS+=d.pct_directo;pctN++;}
+      if(d.yt_subs&&d.yt_subs>ytLast)ytLast=d.yt_subs;
+      if(d.ig_subs&&d.ig_subs>igLast)igLast=d.ig_subs;
+    });
     var margen=rV-rC;var iva=Math.max(0,Math.round(margen*(CFG.iva||21)/121));
-    var auto=Math.round(CFG.reta||0);var irpf=Math.round(Math.max(0,margen-iva-auto)*0.20);
-    var limpio=margen-iva-auto-irpf;var cerrado=_closed.indexOf(mk)>=0;
+    var auto=Math.round(CFG.reta||0);var irpf=Math.round(Math.max(0,margen-iva-auto-comisM)*0.20);
+    var limpio=margen-iva-comisM-auto-irpf;var cerrado=_closed.indexOf(mk)>=0;
+    var multMedio=multN?multS/multN:0,audMedia=audN?audS/audN:0,valMedia=valN?valS/valN:0,pctMedio=pctN?pctS/pctN:0;
+    var stats='<div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px">'
+      +chip('🎥',nDir,'directos')+chip('💶',fmt(rV)+'€','vendido','#2f9e6f')+chip('📦',fmt(rC)+'€','gastado')
+      +chip('📈',fmt(margen)+'€','margen','#2f9e6f')+(multMedio?chip('✖',fmtD(multMedio),'mult medio'):'')+(audMedia?chip('👥',Math.round(audMedia),'audiencia'):'')
+      +'</div>';
     var rows=list.map(function(d){
-      var mult=(d.ventas&&d.stock)?' ('+fmtD(d.ventas/d.stock)+')':'';
-      return '<div class="fp-row"><span>'+(d.fecha||'')+' · '+esc(d.tipo||'—')+(d.cartas?' · '+d.cartas+' cartas':'')+' · gastó '+fmt(d.stock)+'€ → <strong>'+fmt(d.ventas)+'€</strong>'+mult+(d.aud?' · 👥'+d.aud:'')+(d.notas?' · <span style="color:var(--t3)">'+esc(d.notas)+'</span>':'')+'</span><button class="btn-sm danger" onclick="delReg('+d.id+')">×</button></div>';
+      var col=TCOL[d.tipo]||'#6b6b63';var mult=(d.ventas&&d.stock)?' <span style="color:var(--t3)">('+fmtD(d.ventas/d.stock)+')</span>':'';
+      var ce=comEur(d);var badge='<span style="background:'+col+'1e;color:'+col+';font-weight:700;font-size:.66em;padding:2px 9px;border-radius:20px;white-space:nowrap">'+esc(d.tipo||'—')+'</span>';
+      return '<div class="fp-row" style="align-items:flex-start"><span style="line-height:1.7">'+badge+' <span style="color:var(--t3);font-size:.9em">'+(d.fecha||'')+'</span> · '+(d.cartas?d.cartas+' cartas · ':'')+'gastó '+fmt(d.stock)+'€ → <strong>'+fmt(d.ventas)+'€</strong>'+mult+(ce?' · <span style="color:var(--re)">−'+fmt(ce)+'€ com.</span>':'')+(d.aud?' · 👥'+d.aud:'')+(d.notas?'<br><span style="color:var(--t3);font-size:.9em">📝 '+esc(d.notas)+'</span>':'')+'</span><button class="btn-sm danger" onclick="delReg('+d.id+')">×</button></div>';
     }).join('');
+    var hasRedes=picoMax||valMedia||pctMedio||ytLast||igLast;
+    var redes=hasRedes?'<div style="margin-top:10px;padding:11px 13px;background:var(--s2);border:1px solid var(--bd);border-radius:9px"><div style="font-size:.62em;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:9px">📱 Redes y audiencia del mes</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(76px,1fr));gap:10px">'
+      +(ytLast?mini('YouTube',fmt(ytLast),'#d24a4a'):'')+(igLast?mini('Instagram',fmt(igLast),'#8b5cf6'):'')+(audMedia?mini('Aud. media',Math.round(audMedia),'#3b82f6'):'')+(picoMax?mini('Pico',picoMax,'#3b82f6'):'')+(valMedia?mini('Valoración',valMedia.toFixed(1)+'/5','#c2760f'):'')+(pctMedio?mini('% directo',Math.round(pctMedio)+'%','#2f9e6f'):'')
+      +'</div></div>':'';
+    var fisc='<div style="margin-top:10px;padding:10px 13px;background:var(--s2);border:1px solid var(--bd);border-radius:9px;font-size:.72em;color:var(--t2);line-height:1.9">Margen: <strong>'+fmt(margen)+'€</strong> · IVA REBU: <strong style="color:var(--re)">−'+fmt(iva)+'€</strong>'+(comisM?' · Comisión '+(CFG.comision||8)+'%: <strong style="color:var(--re)">−'+fmt(comisM)+'€</strong>':'')+' · Autónomos: <strong style="color:var(--re)">−'+fmt(auto)+'€</strong> · IRPF: <strong style="color:var(--re)">−'+fmt(irpf)+'€</strong> → <strong style="color:var(--g);font-size:1.15em">Limpio: '+fmt(limpio)+'€</strong></div>';
     var closeBtn=cerrado?'<button class="btn-sm" onclick="reabrirMes(\''+mk+'\')">Reabrir mes</button>':'<button class="btn-sm primary" onclick="cerrarMes(\''+mk+'\','+rV+','+(margen-iva)+')">🔒 Cerrar mes</button>';
     body+='<div class="mes-sec" id="mes-'+mk+'" style="margin-bottom:20px"><div class="dash-box">'
-      +'<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px"><div style="font-weight:800;font-size:1.05em">'+label+(cerrado?' <span style="color:var(--g);font-size:.7em">🔒 cerrado</span>':'')+'</div><div style="font-size:.78em;color:var(--t2)">'+list.length+' registros · vendido <strong>'+fmt(rV)+'€</strong></div></div>'
-      +rows
-      +'<div style="margin-top:10px;padding:10px 12px;background:var(--s2);border:1px solid var(--bd);border-radius:9px;font-size:.72em;color:var(--t2);line-height:1.9">Margen (vendido−gastado): <strong>'+fmt(margen)+'€</strong> · IVA REBU: <strong style="color:var(--re)">−'+fmt(iva)+'€</strong> · Autónomos: <strong style="color:var(--re)">−'+fmt(auto)+'€</strong> · IRPF: <strong style="color:var(--re)">−'+fmt(irpf)+'€</strong> → <strong style="color:var(--g)">Limpio: '+fmt(limpio)+'€</strong></div>'
-      +'<div style="margin-top:10px;text-align:right">'+closeBtn+'</div>'
+      +'<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px"><div style="font-weight:800;font-size:1.15em">'+label+(cerrado?' <span style="color:var(--g);font-size:.62em">🔒 cerrado</span>':'')+'</div><div style="font-size:.76em;color:var(--t3)">'+list.length+' registros</div></div>'
+      +stats+rows+redes+fisc
+      +'<div style="margin-top:11px;text-align:right">'+closeBtn+'</div>'
       +'</div></div>';
   });
   cm.innerHTML=form+body;
@@ -1022,11 +1054,12 @@ function setupSpy(){
 function computeSalud(){
   var ventasR=0,stockR=0;
   DIRLOG.forEach(function(d){ventasR+=(d.ventas||0);stockR+=(d.stock||0);});
+  var comisR=DIRLOG.reduce(function(a,d){return a+(d.com?Math.round((d.ventas||0)*(CFG.comision||0)/100):0);},0);
   var svLatest=0,s90Latest=0;
   var margen=ventasR-stockR;
   var reserva=0;try{var Q=computeQuarters();Q.forEach(function(q){if(q.origen==='cerrado'||q.origen==='manual'){if(!(q.p303&&q.p130p))reserva+=(q.iva||0)+(q.p130||0)+(q.cuotas||0);}});}catch(e){}
   var retiros=0;(REPHIST||[]).forEach(function(r){(r.cats||[]).forEach(function(c){if(/sueldo|ocio/i.test(c.n||''))retiros+=(c.eur||0);});});
-  var saldo=(CFG.capital||0)+margen-retiros;
+  var saldo=(CFG.capital||0)+margen-comisR-retiros;
   var disponible=Math.max(0,saldo-reserva);
   var pct=(CFG.sueldo||25);
   var sueldo=Math.round(disponible*pct/100);
@@ -1419,7 +1452,7 @@ function addMes(){
 }
 function delMes(i){if(!confirm(`¿Eliminar ${MESES[i].label}?`))return;MESES.splice(i,1);save();renderMcfgs();}
 function applyAll(){
-  CFG.capital=num('g-capital');CFG.iva=num('g-iva');CFG.sueldo=num('g-sueldo');CFG.reta=num('g-reta');CFG.fijo=num('g-fijo');
+  CFG.capital=num('g-capital');CFG.iva=num('g-iva');CFG.sueldo=num('g-sueldo');CFG.reta=num('g-reta');CFG.fijo=num('g-fijo');CFG.comision=num('g-comision');
   save();renderCrono();renderDash();
 }
 function renderPreview(){
@@ -1794,7 +1827,7 @@ function computeQuarters(){
     const mReal=qM.filter(function(m){return _closed.includes(m)||DIRLOG.some(function(d){return (d.fecha||'').slice(0,7)===m&&(d.ventas||d.stock);});}).length;const cuotas=Math.round(((CFG.reta||0)+(CFG.fijo||0))*(mReal||qd.items.length));
     const gq=fs0.gastos||0;
     const dua=PEDIDOS.filter(p=>qM.includes(p.mes_destino)).reduce((a,p)=>a+(p.coste_import||0),0);
-    const gfij=GASTOS.reduce((a3,g3)=>a3+(+g3.importe||0),0)*qd.items.length;const gext=GEXTRA.filter(g3=>qM.includes((g3.wid||'').slice(0,7))).reduce((a3,g3)=>a3+(+g3.importe||0),0);const cerrado=qM.some(function(m){return _closed.includes(m);});const rend=(margen-iva)-cuotas-gq-dua-gfij-gext;
+    const gfij=GASTOS.reduce((a3,g3)=>a3+(+g3.importe||0),0)*qd.items.length;const gext=GEXTRA.filter(g3=>qM.includes((g3.wid||'').slice(0,7))).reduce((a3,g3)=>a3+(+g3.importe||0),0);const cerrado=qM.some(function(m){return _closed.includes(m);});const comis=DIRLOG.filter(function(d){return qM.includes((d.fecha||'').slice(0,7))&&d.com;}).reduce(function(a,d){return a+Math.round((d.ventas||0)*(CFG.comision||0)/100);},0);const rend=(margen-iva)-cuotas-gq-dua-gfij-gext-comis;
     acum[qd.y]=acum[qd.y]||{rend:0,pag:0};acum[qd.y].rend+=rend;
     const p130=Math.max(0,Math.round(acum[qd.y].rend*0.2-acum[qd.y].pag));acum[qd.y].pag+=p130;
     out.push({key:qd.key,lbl:qd.y+' T'+qd.q,origen:manual?'manual':(cerrado?'cerrado':(nR>0?'real':(hV>0?'cierres':'estimado'))),ventas,coste,margen,iva,cuotas,gq,dua,gastos:gq+gfij+gext,cerrado,rend,p130,p303:!!fs0.p303,p130p:!!fs0.p130,plazo:plazo303(qd.y,qd.q)});
@@ -1902,7 +1935,7 @@ function importData(input){
   rd.readAsText(f);
 }
 function syncCfg(){
-  const m={'g-capital':CFG.capital,'g-stock':CFG.stock,'g-mult':CFG.mult,'g-iva':CFG.iva,'g-sueldo':CFG.sueldo,'g-reta':CFG.reta,'g-fijo':CFG.fijo,'g-colchon':CFG.colchon,'g-hucha':CFG.hucha,'g-colchonobj':CFG.colchonObj,'g-trabajo':CFG.trabajo,'g-ingreso':CFG.ingreso,'g-vida':CFG.vida,'g-objetivo':CFG.objetivo};
+  const m={'g-capital':CFG.capital,'g-stock':CFG.stock,'g-mult':CFG.mult,'g-iva':CFG.iva,'g-sueldo':CFG.sueldo,'g-reta':CFG.reta,'g-fijo':CFG.fijo,'g-comision':CFG.comision,'g-colchon':CFG.colchon,'g-hucha':CFG.hucha,'g-colchonobj':CFG.colchonObj,'g-trabajo':CFG.trabajo,'g-ingreso':CFG.ingreso,'g-vida':CFG.vida,'g-objetivo':CFG.objetivo};
   for(const k in m){const el=document.getElementById(k);if(el&&m[k]!==undefined)el.value=m[k];}
 }
 function updBkLast(){
@@ -2303,6 +2336,7 @@ document.addEventListener('keydown',e=>{
 load();
 if(!CHECK)CHECK=JSON.parse(JSON.stringify(CHECK_DEFAULT));
 if(CFG.reta===undefined)CFG.reta=275;
+if(CFG.comision===undefined)CFG.comision=8;
 if(CFG.fijo===undefined)CFG.fijo=0;
 if(CFG.colchon===undefined)CFG.colchon=10;
 if(CFG.hucha===undefined)CFG.hucha=10;
