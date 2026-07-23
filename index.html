@@ -492,13 +492,14 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ac)!impo
     <button class="tab" data-t="check" onclick="sw('check',this)"><span class="ti">✓</span>Checklist</button>
     <button class="tab" data-t="cfg" onclick="sw('cfg',this)"><span class="ti">⚙</span>Config</button>
   </nav>
-  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v74</div>
+  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v77</div>
 </aside>
 <main class="content">
 
 <!-- DASHBOARD -->
 <div class="view on" id="v-dash">
 <div class="dash">
+  <div id="dash-salud"></div>
   <div id="hoyw"></div>
   <div class="dash-grid" id="dash-kpis"></div>
   <div id="anio-box"></div>
@@ -1006,6 +1007,8 @@ function renderCrono(){
           <div class="real-field"><label>Stock real invertido (€)</label><input type="number" id="r-stock-${w.id}" value="${rd.est_stock_real||''}" placeholder="ej: 500" step="10" oninput="autoReal('${w.id}')"></div>
           <div class="real-field"><label>Ventas reales (€)</label><input type="number" id="r-ventas-${w.id}" value="${rd.ventas||''}" placeholder="ej: 725" step="10" oninput="autoReal('${w.id}')"></div>
           <div class="real-field"><label>Beneficio neto real (€)<span class="auto-tag">auto</span></label><input type="number" id="r-benef-${w.id}" value="${rd.benef||''}" placeholder="se calcula solo" step="5"></div>
+          <div class="real-field"><label>Stock sin vender (€)</label><input type="number" id="r-stocksv-${w.id}" value="${rd.stock_sv||''}" placeholder="ej: 1200" step="10"></div>
+          <div class="real-field"><label>Stock &gt;90 días (€)</label><input type="number" id="r-stock90-${w.id}" value="${rd.stock_90||''}" placeholder="ej: 300" step="10"></div>
           ${!w.noDir?`<div class="real-field"><label>Directos hechos</label><input type="number" id="r-ndir-${w.id}" value="${rd.ndir||''}" min="0" max="10" placeholder="ej: 2"></div>`:''}
         </div>
         <details style="margin-bottom:10px"><summary style="cursor:pointer;font-size:.72em;color:var(--t3);padding:5px 0">▸ Más detalles (opcional — audiencia, redes, multiplicador)</summary>
@@ -1038,7 +1041,7 @@ function renderCrono(){
             <div class="wk-sub">${w.subtitle}</div>
           </div>
           <div class="wk-right">
-            <span class="wk-est">${w.est_benef?'+'+fmt(w.est_benef)+'€':'—'}</span>
+            ${(haReal&&benefReal!=null)?`<span class="wk-est" style="color:${benefReal>=(w.est_benef||0)?'var(--g)':'var(--re)'}">${benefReal>=0?'+':''}${fmt(benefReal)}€</span>`:`<span class="wk-est" style="color:var(--t3);font-weight:600">${w.est_benef?'~'+fmt(w.est_benef)+'€':'—'}<span style="font-size:.8em;opacity:.7"> plan</span></span>`}
             ${realBadge}
             <span class="wk-chev">▾</span>
           </div>
@@ -1076,7 +1079,7 @@ function renderCrono(){
     </div>`;
   });
   if(hiddenM>0||!cronoHide){
-    sbHtml+=`<div style="padding:8px 16px;"><button onclick="cronoHide=!cronoHide;LS.set('tcg_cronohide',cronoHide?'1':'0');renderCrono();" style="width:100%;padding:6px;background:var(--s2);border:1px solid var(--bd);color:var(--t2);border-radius:6px;font-size:.7em;font-weight:600;cursor:pointer;font-family:inherit;">${cronoHide?'▸ Mostrar '+hiddenM+' mes(es) pasado(s)':'▾ Ocultar meses pasados'}</button></div>`;
+    sbHtml+=`<div style="padding:8px 16px;"><button onclick="cronoHide=!cronoHide;LS.set('tcg_cronohide',cronoHide?'1':'0');save();renderCrono();" style="width:100%;padding:6px;background:var(--s2);border:1px solid var(--bd);color:var(--t2);border-radius:6px;font-size:.7em;font-weight:600;cursor:pointer;font-family:inherit;">${cronoHide?'▸ Mostrar '+hiddenM+' mes(es) pasado(s)':'▾ Ocultar meses pasados'}</button></div>`;
   }
   sbHtml+=`<div style="padding:12px 16px;margin-top:8px;border-top:1px solid var(--bd);">
     <button onclick="sw('cfg',document.querySelector('.tab[data-t=cfg]'))" style="width:100%;padding:7px;background:var(--rl);border:1px solid var(--r);color:var(--r);border-radius:6px;font-size:0.75em;font-weight:600;cursor:pointer;font-family:'Avenir Next','Avenir',sans-serif;">+ Añadir mes</button>
@@ -1136,6 +1139,8 @@ function saveReal(wId){
     valoracion:gv(`r-val-${wId}`),
     yt_subs:gv(`r-yt-${wId}`),
     ig_subs:gv(`r-ig-${wId}`),
+    stock_sv:gv(`r-stocksv-${wId}`),
+    stock_90:gv(`r-stock90-${wId}`),
     notas:gs(`r-notas-${wId}`)
   };
   save();
@@ -1164,8 +1169,76 @@ function setupSpy(){
   document.querySelectorAll('.mes-sec').forEach(el=>obs.observe(el));
 }
 
+
+// ══ SALUD DEL NEGOCIO ══
+function computeSalud(){
+  var ventasR=0,stockR=0;
+  Object.keys(REAL).forEach(function(k){var r=REAL[k]||{};ventasR+=(r.ventas||0);stockR+=(r.est_stock_real||0);});
+  var svLatest=0,s90Latest=0,lastK='';
+  Object.keys(REAL).sort().forEach(function(k){var r=REAL[k]||{};if(r.stock_sv!=null||r.stock_90!=null){if(k>=lastK){lastK=k;svLatest=r.stock_sv||0;s90Latest=r.stock_90||0;}}});
+  var margen=ventasR-stockR;
+  var reserva=0;try{var Q=computeQuarters();Q.forEach(function(q){if(q.origen==='cerrado'||q.origen==='manual'){if(!(q.p303&&q.p130p))reserva+=(q.iva||0)+(q.p130||0)+(q.cuotas||0);}});}catch(e){}
+  var retiros=0;(REPHIST||[]).forEach(function(r){(r.cats||[]).forEach(function(c){if(/sueldo|ocio/i.test(c.n||''))retiros+=(c.eur||0);});});
+  var saldo=(CFG.capital||0)+margen-retiros;
+  var disponible=Math.max(0,saldo-reserva);
+  var pct=(CFG.sueldo||25);
+  var sueldo=Math.round(disponible*pct/100);
+  var reinv=disponible-sueldo;
+  var fijos=(CFG.reta||0)+(CFG.fijo||0);
+  var col=(CFG.colchonObj||0);
+  var estado=saldo<reserva?'rojo':(disponible<Math.max(col,fijos,1)?'ambar':'verde');
+  return {ventasR:ventasR,stockR:stockR,margen:margen,reserva:reserva,retiros:retiros,saldo:saldo,disponible:disponible,sueldo:sueldo,reinv:reinv,estado:estado,stockSV:svLatest,stock90:s90Latest,fijos:fijos};
+}
+window.computeSalud=computeSalud;
+function renderSalud(){
+  var el=document.getElementById('dash-salud');if(!el)return;
+  var s=computeSalud();
+  var map={verde:['#2f9e6f','🟢','Sano','Puedes reinvertir con tranquilidad.'],ambar:['#c2760f','🟡','Precaución','Cubres Hacienda, pero deja colchón antes de reinvertir fuerte.'],rojo:['#d24a4a','🔴','Alerta','El saldo no cubre lo que debes a Hacienda. No reinviertas ni te pagues sueldo aún.']};
+  var m=map[s.estado];
+  var box=function(emoji,label,val,sub,c){return '<div style="flex:1;min-width:118px;background:var(--s1);border:1px solid var(--bd);border-top:3px solid '+c+';border-radius:12px;padding:12px 14px"><div style="font-size:.64em;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">'+emoji+' '+label+'</div><div style="font-size:1.5em;font-weight:800;color:'+c+';margin:3px 0 1px">'+fmt(val)+'€</div><div style="font-size:.64em;color:var(--t3)">'+sub+'</div></div>';};
+  var inp='padding:8px 10px;border:1px solid var(--bd);border-radius:8px;font-family:inherit;font-size:.9em';
+  el.innerHTML='<div class="dash-box" style="margin-bottom:16px;border-top:3px solid '+m[0]+'">'
+   +'<div class="box-title"><span>🩺</span> Salud del negocio</div>'
+   +'<div style="display:flex;align-items:center;gap:12px;padding:4px 2px 14px"><div style="font-size:2em">'+m[1]+'</div><div><div style="font-weight:800;font-size:1.05em;color:'+m[0]+'">'+m[2]+'</div><div style="font-size:.78em;color:var(--t2)">'+m[3]+'</div></div></div>'
+   +'<div style="display:flex;gap:10px;flex-wrap:wrap">'
+     +box('🔴','Para Hacienda',s.reserva,'resérvalo, intocable','#d24a4a')
+     +box('🟡','Tu sueldo',s.sueldo,'puedes cobrarte','#c2760f')
+     +box('🟢','Reinversión',s.reinv,'para stock / breaks','#2f9e6f')
+   +'</div>'
+   +'<div style="font-size:.74em;color:var(--t2);margin-top:12px;line-height:1.7">💰 Saldo disponible estimado: <strong>'+fmt(s.saldo)+'€</strong> · tras Hacienda: <strong>'+fmt(s.disponible)+'€</strong>'
+     +(s.stockSV?' · 📦 Stock sin vender: <strong>'+fmt(s.stockSV)+'€</strong>':'')
+     +(s.stock90?' · 🕒 Stock &gt;90 días: <strong style="color:var(--re)">'+fmt(s.stock90)+'€</strong>':'')+'</div>'
+   +'<div style="margin-top:12px;padding:11px 13px;background:var(--s2);border:1px solid var(--bd);border-radius:10px">'
+     +'<div style="font-size:.72em;font-weight:700;color:var(--t2);margin-bottom:7px">🧮 Simulador de pedido — ¿me lo puedo permitir?</div>'
+     +'<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><input type="number" id="sim-imp" placeholder="importe del pedido €" style="flex:1;min-width:140px;'+inp+'" onkeydown="if(event.key===\'Enter\')simPedido()"><button class="btn-sm primary" onclick="simPedido()">Comprobar</button></div>'
+     +'<div id="sim-out" style="font-size:.76em;margin-top:9px;color:var(--t3)">Escribe cuánto te quieres gastar y te digo si entra en tu reinversión.</div>'
+   +'</div>'
+   +'<div style="margin-top:12px;padding:11px 13px;background:var(--s2);border:1px solid var(--bd);border-radius:10px">'
+     +'<div style="font-size:.72em;font-weight:700;color:var(--t2);margin-bottom:7px">⚡ Registro rápido de directo</div>'
+     +'<div style="display:flex;gap:8px;flex-wrap:wrap"><input type="number" id="qd-cartas" placeholder="nº cartas" style="flex:1;min-width:88px;'+inp+'"><input type="number" id="qd-gast" placeholder="gastado €" style="flex:1;min-width:88px;'+inp+'"><input type="number" id="qd-vend" placeholder="vendido €" style="flex:1;min-width:88px;'+inp+'"><button class="btn-sm primary" onclick="addDirQuick()">+ Guardar</button></div>'
+   +'</div>'
+   +'<div style="margin-top:10px;text-align:right"><button class="btn-sm" onclick="exportData()">⬇ Backup JSON</button></div>'
+  +'</div>';
+}
+function simPedido(){
+  var x=num('sim-imp');var s=computeSalud();var out=document.getElementById('sim-out');if(!out)return;
+  if(!x){out.style.color='var(--t3)';out.innerHTML='Escribe un importe.';return;}
+  var tras=s.disponible-x;
+  if(x>s.disponible){out.style.color='var(--re)';out.innerHTML='🔴 Cuidado: '+fmt(x)+'€ supera tu disponible ('+fmt(s.disponible)+'€). Tocarías el dinero de Hacienda — mejor no.';}
+  else if(x>s.reinv){out.style.color='var(--y)';out.innerHTML='🟡 Puedes, pero '+fmt(x)+'€ se comería parte de tu sueldo/colchón. Te quedarían '+fmt(tras)+'€.';}
+  else{out.style.color='var(--g)';out.innerHTML='🟢 Adelante: '+fmt(x)+'€ entra en tu reinversión ('+fmt(s.reinv)+'€). Te quedarían '+fmt(tras)+'€ disponibles.';}
+}
+function addDirQuick(){
+  var cartas=num('qd-cartas'),g=num('qd-gast'),v=num('qd-vend');
+  if(!v&&!g){alert('Pon al menos lo gastado y lo vendido.');return;}
+  DIRLOG.unshift({id:Date.now(),fecha:todayStr(),hora:'',tipo:'',cartas:cartas,stock:g,ventas:v,aud:0,evento:'Registro rápido'});
+  save();try{renderDyB();}catch(e){}renderDash();
+  ['qd-cartas','qd-gast','qd-vend'].forEach(function(i){var e=document.getElementById(i);if(e)e.value='';});
+  alert('Directo guardado.');
+}
 // ══ DASHBOARD ══
 function renderDash(){
+  try{renderSalud();}catch(e){}
   // KPIs
   const allReal=Object.values(REAL).filter(r=>r.benef);
   const totalBenefReal=allReal.reduce((s,r)=>s+(r.benef||0),0);
@@ -2087,12 +2160,12 @@ function renderHoy(){
 }
 
 function hoyDone(){try{const o=JSON.parse(LS.get('tcg_hoydone')||'{}');if(o.d!==todayStr())return{d:todayStr(),k:[]};return o;}catch(e){return{d:todayStr(),k:[]};}}
-function togHoy(k){const o=hoyDone();const i=o.k.indexOf(k);if(i>=0)o.k.splice(i,1);else o.k.push(k);LS.set('tcg_hoydone',JSON.stringify(o));renderHoy();}
+function togHoy(k){const o=hoyDone();const i=o.k.indexOf(k);if(i>=0)o.k.splice(i,1);else o.k.push(k);LS.set('tcg_hoydone',JSON.stringify(o));save();renderHoy();}
 function editObj(){const v=prompt('Objetivo de beneficio de este mes (€):',CFG.objetivo||0);if(v===null)return;CFG.objetivo=Math.max(0,Math.round(parseFloat(v))||0);save();renderDash();}
 let _cerrarPending=null;
 function cerrarMes(mesid,rV,rB){const auto=Math.round(CFG.reta||0);const iva=Math.round((rB||0)*0.21);const irpf=Math.round(Math.max(0,(rB||0)-auto)*0.20);const gp=GEXTRA.filter(g=>(g.wid||'').indexOf(mesid)===0).reduce((a,g)=>a+(+g.importe||0),0);const limpio=(rB||0)-auto-irpf-gp;_cerrarPending=mesid;document.getElementById('cerrar-body').innerHTML='Resumen de <strong>'+mesid+'</strong>:<br><br>Ventas reales: <strong>'+fmt(rV)+'€</strong><br>Beneficio (tras IVA): <strong>'+fmt(rB)+'€</strong><br><br><span style="font-size:.85em;color:var(--t3)">A reservar para Hacienda:</span><br>· IVA REBU (303, ~21%): <strong style="color:var(--re)">'+fmt(iva)+'€</strong><br>· Cuota autónomos: <strong style="color:var(--re)">'+fmt(auto)+'€</strong><br>· IRPF (pago 130, ~20%): <strong style="color:var(--re)">'+fmt(irpf)+'€</strong>'+(gp?'<br>· Gastos puntuales: <strong style="color:var(--re)">'+fmt(gp)+'€</strong>':'')+'<br><br><strong style="color:var(--g);font-size:1.2em">Te queda limpio: '+fmt(limpio)+'€</strong><br><br><span style="font-size:.8em;color:var(--t3)">Estimación orientativa; confírmalo con tu gestora.</span>';document.getElementById('modal-cerrar').classList.add('open');}
-function doCerrarMes(){if(!_cerrarPending)return;let c=[];try{c=JSON.parse(LS.get('tcg_closed')||'[]');}catch(e){}if(!c.includes(_cerrarPending))c.push(_cerrarPending);LS.set('tcg_closed',JSON.stringify(c));_cerrarPending=null;closeModal('modal-cerrar');renderCrono();}
-function reabrirMes(mesid){let c=[];try{c=JSON.parse(LS.get('tcg_closed')||'[]');}catch(e){}c=c.filter(x=>x!==mesid);LS.set('tcg_closed',JSON.stringify(c));renderCrono();}
+function doCerrarMes(){if(!_cerrarPending)return;let c=[];try{c=JSON.parse(LS.get('tcg_closed')||'[]');}catch(e){}if(!c.includes(_cerrarPending))c.push(_cerrarPending);LS.set('tcg_closed',JSON.stringify(c));save();_cerrarPending=null;closeModal('modal-cerrar');renderCrono();if(typeof renderDash==='function')renderDash();}
+function reabrirMes(mesid){let c=[];try{c=JSON.parse(LS.get('tcg_closed')||'[]');}catch(e){}c=c.filter(x=>x!==mesid);LS.set('tcg_closed',JSON.stringify(c));save();renderCrono();if(typeof renderDash==='function')renderDash();}
 function addNotaW(wid){const t=str('ntw-txt-'+wid);if(!t)return;NOTAS.unshift({id:Date.now(),wid:wid,fecha:todayStr(),txt:t});save();renderCrono();}
 function addGastoW(wid){const c=str('gpw-con-'+wid),i=num('gpw-imp-'+wid);if(!c||!i){alert('Escribe concepto e importe.');return;}GEXTRA.unshift({id:Date.now(),wid:wid,fecha:todayStr(),concepto:c,importe:i});save();renderCrono();if(typeof renderDash==='function')renderDash();}
 function addGastoP(){const c=str('gp-con'),i=num('gp-imp');if(!c||!i){alert('Escribe concepto e importe.');return;}GEXTRA.unshift({id:Date.now(),fecha:todayStr(),concepto:c,importe:i});save();renderDash();}
