@@ -482,7 +482,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ac)!impo
   <nav class="tabs">
     
     <button class="tab on" data-t="dash" onclick="sw('dash',this)"><span class="ti">☀</span>Inicio</button>
-    <button class="tab" data-t="crono" onclick="sw('crono',this)"><span class="ti">≣</span>Cronograma</button>
+    <button class="tab" data-t="crono" onclick="sw('crono',this)"><span class="ti">≣</span>Registro</button>
     
     <button class="tab" data-t="pedidos" onclick="sw('pedidos',this)"><span class="ti">▣</span>Pedidos CH</button>
     <button class="tab" data-t="cal" onclick="sw('cal',this)"><span class="ti">▤</span>Calendario</button>
@@ -492,7 +492,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ac)!impo
     <button class="tab" data-t="check" onclick="sw('check',this)"><span class="ti">✓</span>Checklist</button>
     <button class="tab" data-t="cfg" onclick="sw('cfg',this)"><span class="ti">⚙</span>Config</button>
   </nav>
-  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v77</div>
+  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v78</div>
 </aside>
 <main class="content">
 
@@ -502,12 +502,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ac)!impo
   <div id="dash-salud"></div>
   <div id="hoyw"></div>
   <div class="dash-grid" id="dash-kpis"></div>
-  <div id="anio-box"></div>
-  <div class="dash-box" style="margin-bottom:16px"><div class="box-title"><span>📉</span> Real vs plan por mes</div><div id="dash-rvp"></div></div>
   <details class="mas-analisis">
     <summary>▸ Ver más análisis — gráficas, reparto, capital y redes</summary>
     <div style="margin-top:14px">
-      <div class="dash-box" id="box-mes" style="margin-bottom:16px"><div class="box-title"><span>🗓</span> Mes en curso</div><div id="dash-mes"></div></div>
       
       
       <div class="dash-row">
@@ -575,63 +572,28 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ac)!impo
 <div class="view" id="v-cfg">
 <div class="cfgw">
   <div class="cfg-sec">
-    <div class="cfg-sec-title">Parámetros globales</div>
+    <div class="cfg-sec-title">Datos para el cálculo fiscal</div>
     <div class="cfg-grid">
       <div class="cf"><label>Capital inicial (€)</label><input type="number" id="g-capital" value="10000" step="500"></div>
-      <div class="cf"><label>Stock pre-llegada enero (€)</label><input type="number" id="g-stock" value="4000" step="250"></div>
-      <div class="cf"><label>Multiplicador estimado (×)</label><input type="number" id="g-mult" value="1.45" step="0.05" min="1.1"></div>
       <div class="cf"><label>% IVA REBU sobre margen</label><input type="number" id="g-iva" value="21" min="0" max="21"></div>
-      <div class="cf"><label>% Sueldo retirado por ciclo</label><input type="number" id="g-sueldo" value="25" min="0" max="100" step="5"></div>
-      <div class="cf"><label>Cuota autónomos · RETA (€/mes)</label><input type="number" id="g-reta" value="87" step="10"><div style="font-size:.62em;color:var(--t3);margin-top:4px;line-height:1.4">Se paga <strong>cada mes</strong> (domiciliada). Lo que es trimestral son el IVA (303) y el IRPF (130); la app ya reparte esta cuota por trimestre en el apartado Fiscal.</div></div>
+      <div class="cf"><label>Cuota autónomos (€/mes)</label><input type="number" id="g-reta" value="275" step="10"></div>
+      <div class="cf"><label>% Sueldo que te retiras</label><input type="number" id="g-sueldo" value="25" min="0" max="100" step="5"></div>
       <div class="cf"><label>Otros gastos fijos (€/mes)</label><input type="number" id="g-fijo" value="0" step="10"></div>
-      <div class="cf"><label>% Colchón de emergencia</label><input type="number" id="g-colchon" value="10" min="0" max="50"></div>
-      <div class="cf"><label>% Hucha fiscal</label><input type="number" id="g-hucha" value="10" min="0" max="50"></div>
-      <div class="cf"><label>Objetivo colchón (€)</label><input type="number" id="g-colchonobj" value="2500" step="250"></div>
     </div>
-  </div>
-  <div class="div"></div>
-  <div class="cfg-sec">
-    <div class="cfg-sec-title">Situación personal — para calcular cuánto sueldo necesitas sacar</div>
-    <div class="cfg-grid">
-      <div class="cf"><label>¿Trabajando por cuenta ajena?</label><select id="g-trabajo"><option value="0">No</option><option value="1">Sí</option></select></div>
-      <div class="cf"><label>Ingreso neto del empleo (€/mes)</label><input type="number" id="g-ingreso" value="0" step="50"></div>
-      <div class="cf"><label>Gastos de vida (€/mes)</label><input type="number" id="g-vida" value="900" step="50"></div>
-      <div class="cf"><label>Objetivo de beneficio (€/mes)</label><input type="number" id="g-objetivo" value="0" step="100"></div>
-    </div>
+    <button class="btn-apply" style="margin-top:14px" onclick="applyAll()">Guardar cambios</button>
   </div>
   <div class="div"></div>
   <div class="cfg-sec">
     <div class="cfg-sec-title">Gastos fijos mensuales</div>
     <div id="gastos-box"></div>
-    <div class="add-box">
-      <div class="add-box-lbl">Añadir gasto fijo (se resta de tu beneficio limpio del mes)</div>
+    <div class="add-box"><div class="add-box-lbl">Añadir gasto fijo (se resta de tu beneficio limpio)</div>
       <div class="add-grid" style="grid-template-columns:2fr 1fr auto">
-        <div class="cf"><label>Concepto</label><input type="text" id="ga-concepto" placeholder="OBS, fundas, micro, envíos, luz…"></div>
+        <div class="cf"><label>Concepto</label><input type="text" id="ga-concepto" placeholder="OBS, fundas, micro, envíos…"></div>
         <div class="cf"><label>€/mes</label><input type="number" id="ga-importe" step="5" placeholder="12"></div>
         <button class="btn-sm primary" style="align-self:end" onclick="addGasto()">Añadir</button>
       </div>
     </div>
   </div>
-  <div class="cfg-sec">
-    <div class="cfg-sec-title">Configuración por mes</div>
-    <div class="mcfgs" id="mcfgs"></div>
-    <div class="add-box">
-      <div class="add-box-lbl">Añadir mes al plan</div>
-      <div class="add-grid">
-        <div class="cf"><label>Mes y año</label><input type="month" id="n-mes" value="2028-05"></div>
-        <div class="cf"><label>Directos por semana</label><input type="number" id="n-ds" value="2" min="1" max="5"></div>
-        <div class="cf"><label>€ de stock por directo</label><input type="number" id="n-vd" value="700" step="50"></div>
-        <div class="cf"><label>Breaks del mes (€ total)</label><input type="number" id="n-br" value="500" step="100"></div>
-        <div class="cf"><label>Paquetes Cardhobby/mes</label><input type="number" id="n-pq" value="4" min="1"></div>
-        <div class="cf"><label>€ por paquete</label><input type="number" id="n-vp" value="1250" step="50"></div>
-      </div>
-      <button class="btn-add" onclick="addMes()">+ Añadir mes</button>
-    </div>
-  </div>
-  <div class="div"></div>
-  <button class="btn-apply" onclick="applyAll()">Aplicar todos los cambios</button>
-  <div style="font-size:.7em;color:var(--t3);margin-top:8px;text-align:center">Los cambios en los meses se guardan solos; «Aplicar» recalcula cronograma, dashboard y proyección.</div>
-  <div class="pvbar" id="pvbar"></div>
   <div class="div"></div>
   <div class="cfg-sec">
     <div class="cfg-sec-title">Copia de seguridad</div>
@@ -639,12 +601,13 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ac)!impo
       <button class="btn-exp" onclick="exportData()">⬇ Exportar backup (.json)</button>
       <button class="btn-imp" onclick="document.getElementById('imp-file').click()">⬆ Importar backup</button>
       <input type="file" id="imp-file" accept=".json,application/json" style="display:none" onchange="importData(this)">
-      <div class="bk-note">Los datos viven solo en este navegador (localStorage). Exporta un backup cada semana y guárdalo en la nube — si cambias de navegador u ordenador, impórtalo ahí. <strong id="bk-last"></strong></div>
+      <div class="bk-note">Tus datos viven en este navegador y en tu cuenta de Google. Exporta un backup de vez en cuando por seguridad. <strong id="bk-last"></strong></div>
     </div>
   </div>
 </div>
 </div>
 
+<!-- FISCAL -->
 <!-- FISCAL -->
 <div class="view" id="v-fiscal"><div class="fisw" id="fisw"></div></div>
 
@@ -922,175 +885,60 @@ function buildWeeks(mc,isEnero,idx){
 }
 
 // ══ RENDER CRONOGRAMA ══
+function ensureMonths(){
+  var have={};MESES.forEach(function(m){have[mid(m.y,m.m)]=1;});
+  DIRLOG.forEach(function(d){var mk=(d.fecha||'').slice(0,7);if(mk&&!have[mk]){var y=+mk.slice(0,4),m=+mk.slice(5,7)-1;MESES.push({y:y,m:m,ds:0,vd:0,br:0,pq:0,vp:0,fixed:false,cls:'extra',label:mLabel(y,m)});have[mk]=1;}});
+  MESES.sort(function(a,b){return a.y!==b.y?a.y-b.y:a.m-b.m;});
+}
+function addReg(){
+  var f=str('rg-fecha');if(!f){alert('Pon la fecha.');return;}
+  DIRLOG.unshift({id:Date.now(),fecha:f,tipo:str('rg-tipo'),cartas:num('rg-cartas'),stock:num('rg-gast'),ventas:num('rg-vend'),aud:num('rg-aud'),notas:str('rg-notas'),evento:''});
+  ensureMonths();save();renderCrono();if(typeof renderDash==='function')renderDash();
+  ['rg-cartas','rg-gast','rg-vend','rg-aud','rg-notas'].forEach(function(i){var e=document.getElementById(i);if(e)e.value='';});
+}
+function delReg(id){if(!confirm('¿Eliminar este registro?'))return;DIRLOG=DIRLOG.filter(function(x){return x.id!==id;});save();renderCrono();if(typeof renderDash==='function')renderDash();}
 function renderCrono(){
-  wIdCounter=0;allWeeks=[];let hiddenM=0;const _tn=new Date();
-  let sbHtml=`<div class="csb-title">Meses</div>`;
-  let mainHtml='';
-  MESES.forEach((mc,idx)=>{
-    const isEnero=mc.y===2028&&mc.m===0;
-    const dotC=MCOLS[mc.cls]||'#6d28d9';
-    const mesid=mid(mc.y,mc.m);
-    const cerrado=(()=>{try{return JSON.parse(LS.get('tcg_closed')||'[]').includes(mesid);}catch(e){return false;}})();
-    const gpMes=GEXTRA.filter(g=>(g.wid||'').indexOf(mesid)===0).reduce((a,g)=>a+(+g.importe||0),0);
-    const weeks=buildWeeks(mc,isEnero,idx);
-    const autoWk=Math.round((CFG.reta||0)/(weeks.length||1));
-    weeks.forEach(w=>allWeeks.push(w));
-    if(cronoHide&&((mc.y<_tn.getFullYear())||(mc.y===_tn.getFullYear()&&mc.m<_tn.getMonth()))){hiddenM++;return;}
-    const inv=isEnero?CFG.stock:mc.ds*4*mc.vd;
-    const r=rebu(inv),rb=rebu(mc.br||0);
-    const benef=r.nt+rb.nt,iva=r.iva+rb.iva;
-    const auto=Math.round(CFG.reta||0);
-    const limpio=benef-auto;
-    const sueldo=isEnero?0:Math.round(limpio*CFG.sueldo/100);
-    const reinv=limpio-sueldo;
-    sbHtml+=`<div class="csb-item" data-mes="${mesid}" onclick="scrollToMes('${mesid}')"><div class="csb-dot" style="background:${dotC}"></div>${mc.label}</div>`;
-    const wHtml=weeks.map(w=>{
-      const rd=REAL[w.id]||{};
-      const _nd=new Date();
-      const isNow=mid(_nd.getFullYear(),_nd.getMonth())===w.mesId&&Math.min(Math.ceil(_nd.getDate()/7),isEnero?4:5)===w.sem;
-      const haReal=rd.ventas||rd.benef;
-      const rr=rd.ventas&&rd.est_stock_real?rebuReal(rd.ventas,rd.est_stock_real):null;
-      const benefReal=rd.benef||null;
-      const diff=benefReal&&w.est_benef?benefReal-w.est_benef:null;
-      let realBadge='';
-      if(haReal&&benefReal){
-        const cls=diff>=0?'over':'under';
-        realBadge=`<span class="wk-real ${cls}">${diff>=0?'+':''}${fmt(diff)}€</span>`;
-      } else if(!w.noDir){
-        realBadge=`<span class="wk-real empty">sin datos reales</span>`;
-      }
-      // Panel
-      const pit=(ic,bg,k,v,dim)=>`<div class="pitem" onclick="this.classList.toggle('open')" title="Toca para ver u ocultar el detalle"><div class="pico" style="background:${bg}">${ic}</div><div class="pit-b"><div class="pit-k">${k}<span class="pit-more">ver ▾</span></div><div class="pit-v${dim?' dim':''}">${v}</div></div></div>`;
-      const emojiItems=w.noDir?`
-        ${pit('🎲','#fdf3d8','Break',w.ac)}
-        ${pit('📦','#e3e9fa','Cardhobby',w.co)}
-        ${pit('📣','#fce7ef','YouTube / Redes',w.redes,1)}
-        ${pit('🏷','#ece5fa','Venta directa',w.vd,1)}
-        ${pit('📝','#ececf4','Nota',w.nt,1)}
-      `:`
-        ${pit('🎥','#dff3e9','Directos',w.ac)}
-        ${w.breaks?pit('🎲','#fdf3d8','Break',w.breaks):''}
-        ${pit('📦','#e3e9fa','Cardhobby',w.co)}
-        ${pit('📣','#fce7ef','YouTube / Redes',w.redes,1)}
-        ${pit('🏷','#ece5fa','Venta directa',w.vd,1)}
-        ${pit('📝','#ececf4','Nota',w.nt,1)}
-      `;
-      const estChips=w.noDir?'':`
-        <div class="est-chips">
-          <div class="ec"><div class="ec-v">${fmt(w.est_stock)}€</div><div class="ec-l">Stock</div></div>
-          <div class="ec"><div class="ec-v" style="color:var(--b)">~${fmt(w.r?.v)}€</div><div class="ec-l">Ventas</div></div>
-          <div class="ec"><div class="ec-v" style="color:var(--g)">~${fmt(w.est_benef)}€</div><div class="ec-l">Benef. neto</div></div>
-          <div class="ec"><div class="ec-v" style="color:var(--re)">−${fmt(w.r?.iva)}€</div><div class="ec-l">IVA REBU</div></div>
-        </div>
-        ${autoWk?`<div style="font-size:.66em;color:var(--t2);margin-top:8px;padding:7px 10px;background:var(--yl);border-radius:8px;line-height:1.5">🐷 Cuota autónomos (prorrateo semanal): <strong style="color:var(--re)">−${fmt(autoWk)}€</strong> · beneficio limpio de la semana ≈ <strong style="color:var(--g)">${fmt((w.est_benef||0)-autoWk)}€</strong></div>`:''}
-      `;
-      const realCol=`
-        <h4>Lo que pasó de verdad</h4>
-        ${haReal?`<div class="diff-box">
-          <div class="diff-row"><span class="dk">Stock real invertido</span><span class="dv neu">${fmt(rd.est_stock_real)}€</span></div>
-          <div class="diff-row"><span class="dk">Ventas reales</span><span class="dv neu">${fmt(rd.ventas)}€</span></div>
-          ${rd.ndir?`<div class="diff-row"><span class="dk">Directos hechos</span><span class="dv neu">${rd.ndir}</span></div>`:''}
-          <div class="diff-row"><span class="dk">Multiplicador real</span><span class="dv neu">${fmtD(rd.ventas&&rd.est_stock_real?rd.ventas/rd.est_stock_real:null)}</span></div>
-          ${(rd.ventas&&rd.est_stock_real)?`<div class="diff-row"><span class="dk">Margen bruto (ventas − stock)</span><span class="dv neu">${fmt(rd.ventas-rd.est_stock_real)}€</span></div><div class="diff-row"><span class="dk">− IVA REBU (a Hacienda)</span><span class="dv neg">−${fmt(Math.max(0,(rd.ventas-rd.est_stock_real)-benefReal))}€</span></div>`:''}
-          <div class="diff-row"><span class="dk">Beneficio neto real</span><span class="dv ${benefReal>=w.est_benef?'pos':'neg'}">${fmt(benefReal)}€</span></div>
-          <div class="diff-row"><span class="dk">Diferencia vs estimado</span><span class="dv ${diff>=0?'pos':'neg'}">${diff>=0?'+':''}${fmt(diff)}€</span></div>
-          ${rd.audiencia_media?`<div class="diff-row"><span class="dk">Audiencia media directo</span><span class="dv neu">${rd.audiencia_media}</span></div>`:''}
-          ${rd.pico?`<div class="diff-row"><span class="dk">Pico de audiencia</span><span class="dv neu">${rd.pico}</span></div>`:''}
-          ${rd.mult_real?`<div class="diff-row"><span class="dk">Mult. real verificado</span><span class="dv neu">${fmtD(rd.mult_real)}</span></div>`:''}
-          ${rd.pct_directo?`<div class="diff-row"><span class="dk">% vendido en directo</span><span class="dv neu">${rd.pct_directo}%</span></div>`:''}
-          ${rd.valoracion?`<div class="diff-row"><span class="dk">Valoración del directo</span><span class="dv neu">${'⭐'.repeat(rd.valoracion)}</span></div>`:''}
-          ${rd.yt_subs?`<div class="diff-row"><span class="dk">Subs YouTube (fin sem.)</span><span class="dv neu">${fmt(rd.yt_subs)}</span></div>`:''}
-          ${rd.ig_subs?`<div class="diff-row"><span class="dk">Seguidores Instagram</span><span class="dv neu">${fmt(rd.ig_subs)}</span></div>`:''}
-          ${rd.notas?`<div class="diff-row" style="flex-direction:column;gap:2px"><span class="dk">Notas</span><span class="dv neu" style="font-weight:400;color:var(--t2)">${rd.notas}</span></div>`:''}
-        </div>`:``}
-        <div class="real-grid">
-          <div class="real-field"><label>Stock real invertido (€)</label><input type="number" id="r-stock-${w.id}" value="${rd.est_stock_real||''}" placeholder="ej: 500" step="10" oninput="autoReal('${w.id}')"></div>
-          <div class="real-field"><label>Ventas reales (€)</label><input type="number" id="r-ventas-${w.id}" value="${rd.ventas||''}" placeholder="ej: 725" step="10" oninput="autoReal('${w.id}')"></div>
-          <div class="real-field"><label>Beneficio neto real (€)<span class="auto-tag">auto</span></label><input type="number" id="r-benef-${w.id}" value="${rd.benef||''}" placeholder="se calcula solo" step="5"></div>
-          <div class="real-field"><label>Stock sin vender (€)</label><input type="number" id="r-stocksv-${w.id}" value="${rd.stock_sv||''}" placeholder="ej: 1200" step="10"></div>
-          <div class="real-field"><label>Stock &gt;90 días (€)</label><input type="number" id="r-stock90-${w.id}" value="${rd.stock_90||''}" placeholder="ej: 300" step="10"></div>
-          ${!w.noDir?`<div class="real-field"><label>Directos hechos</label><input type="number" id="r-ndir-${w.id}" value="${rd.ndir||''}" min="0" max="10" placeholder="ej: 2"></div>`:''}
-        </div>
-        <details style="margin-bottom:10px"><summary style="cursor:pointer;font-size:.72em;color:var(--t3);padding:5px 0">▸ Más detalles (opcional — audiencia, redes, multiplicador)</summary>
-        <div class="real-grid" style="margin-top:8px">
-          <div class="real-field"><label>Multiplicador real (×)<span class="auto-tag">auto</span></label><input type="number" id="r-mult-${w.id}" value="${rd.mult_real||''}" placeholder="se calcula solo" step="0.01"></div>
-          ${!w.noDir?`
-          <div class="real-field"><label>Audiencia media directo</label><input type="number" id="r-aud-${w.id}" value="${rd.audiencia_media||''}" placeholder="ej: 45"></div>
-          <div class="real-field"><label>Pico de audiencia</label><input type="number" id="r-pico-${w.id}" value="${rd.pico||''}" placeholder="ej: 78"></div>
-          <div class="real-field"><label>% vendido en directo</label><input type="number" id="r-pct-${w.id}" value="${rd.pct_directo||''}" placeholder="ej: 85" min="0" max="100"></div>
-          <div class="real-field"><label>Valoración (1-5)</label><input type="number" id="r-val-${w.id}" value="${rd.valoracion||''}" min="1" max="5" placeholder="1-5"></div>
-          `:''}
-          <div class="real-field"><label>Subs YouTube (fin sem.)</label><input type="number" id="r-yt-${w.id}" value="${rd.yt_subs||''}" placeholder="ej: 120"></div>
-          <div class="real-field"><label>Seguidores Instagram</label><input type="number" id="r-ig-${w.id}" value="${rd.ig_subs||''}" placeholder="ej: 340"></div>
-        </div>
-        </details>
-        <div class="auto-calc" id="r-auto-${w.id}"></div>
-        <div class="real-field" style="margin-bottom:8px"><label>Notas / Lo que pasó</label><textarea id="r-notas-${w.id}" placeholder="Qué funcionó, qué falló, observaciones...">${rd.notas||''}</textarea></div>
-        <div style="margin:10px 0;padding:10px 12px;background:var(--s2);border:1px solid var(--bd);border-radius:9px"><div style="font-size:.66em;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:6px">🧾 Gastos puntuales de la semana</div>${GEXTRA.filter(g=>g.wid===w.id).map(g=>`<div class="fp-row" style="font-size:.74em"><span>${g.concepto} — ${fmt(g.importe)}€</span><span style="color:var(--re);cursor:pointer" onclick="delGastoP(${g.id})">×</span></div>`).join('')||'<div style="font-size:.72em;color:var(--t3)">Sin gastos esta semana.</div>'}<div class="chk-add" style="grid-template-columns:2fr 1fr auto;gap:6px;margin-top:8px"><div class="cf"><input type="text" id="gpw-con-${w.id}" placeholder="Concepto (envío, fundas…)"></div><div class="cf"><input type="number" id="gpw-imp-${w.id}" placeholder="€"></div><button class="btn-sm primary" onclick="addGastoW('${w.id}')">+ gasto</button></div></div>
-        <div style="margin:10px 0;padding:10px 12px;background:var(--s2);border:1px solid var(--bd);border-radius:9px"><div style="font-size:.66em;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:6px">📝 Notas de la semana</div>${NOTAS.filter(n=>n.wid===w.id).map(n=>`<div class="fp-row" style="font-size:.74em"><span>${n.txt}</span><span style="color:var(--re);cursor:pointer" onclick="delNota(${n.id})">×</span></div>`).join('')||'<div style="font-size:.72em;color:var(--t3)">Sin notas.</div>'}<div class="chk-add" style="grid-template-columns:1fr auto;gap:6px;margin-top:8px"><div class="cf"><input type="text" id="ntw-txt-${w.id}" placeholder="Lo que quieras recordar…"></div><button class="btn-sm" onclick="addNotaW('${w.id}')">+ nota</button></div></div>
-        <button class="btn-sm" style="margin-top:6px;margin-right:8px" onclick="copyPrev('${w.id}')">⧉ Copiar semana anterior</button><button class="btn-save" onclick="saveReal('${w.id}')">Guardar datos reales</button>
-      `;
-      return `<div class="wk ${w.noDir?'break-week':''}${isNow?' now':''}" id="wk-${w.id}">
-        <div class="wk-row" onclick="togWk('${w.id}')">
-          <div class="wk-badge">
-            <span class="wk-tag" style="color:${w.tagC};background:${w.tagC}15;border:1px solid ${w.tagC}30">${w.tag}</span>
-            <span class="wk-dates">${w.dates}${isNow?' <span class="now-tag">● HOY</span>':''}</span>
-          </div>
-          <div class="wk-info">
-            <div class="wk-title">${(rd.ndir&&!w.noDir)?`${rd.ndir} directo${rd.ndir==1?'':'s'} hecho${rd.ndir==1?'':'s'}`:w.title}</div>
-            <div class="wk-sub">${w.subtitle}</div>
-          </div>
-          <div class="wk-right">
-            ${(haReal&&benefReal!=null)?`<span class="wk-est" style="color:${benefReal>=(w.est_benef||0)?'var(--g)':'var(--re)'}">${benefReal>=0?'+':''}${fmt(benefReal)}€</span>`:`<span class="wk-est" style="color:var(--t3);font-weight:600">${w.est_benef?'~'+fmt(w.est_benef)+'€':'—'}<span style="font-size:.8em;opacity:.7"> plan</span></span>`}
-            ${realBadge}
-            <span class="wk-chev">▾</span>
-          </div>
-        </div>
-        <div class="wk-panel" id="wkp-${w.id}">
-          <div class="wk-emojis">${emojiItems}</div>
-          <div class="wk-block">${realCol}</div>
-        </div>
-      </div>`;
+  allWeeks=[];ensureMonths();
+  var cm=document.getElementById('cmain');if(!cm)return;
+  var sb=document.getElementById('csidebar');
+  var _closed=(function(){try{return JSON.parse(LS.get('tcg_closed')||'[]');}catch(e){return[];}})();
+  var byM={};DIRLOG.forEach(function(d){var mk=(d.fecha||'').slice(0,7);if(!mk)return;(byM[mk]=byM[mk]||[]).push(d);});
+  var months=Object.keys(byM).sort().reverse();
+  var inp='padding:8px 10px;border:1px solid var(--bd);border-radius:8px;font-family:inherit;font-size:.9em;width:100%';
+  var form='<div class="dash-box" style="margin-bottom:18px"><div class="box-title"><span>➕</span> Registrar lo que ha pasado</div>'
+   +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:9px">'
+   +'<div class="cf"><label>Fecha</label><input type="date" id="rg-fecha" value="'+todayStr()+'" style="'+inp+'"></div>'
+   +'<div class="cf"><label>Tipo</label><select id="rg-tipo" style="'+inp+'"><option>Break</option><option>Subasta</option><option>Mixto</option><option>Venta directa</option></select></div>'
+   +'<div class="cf"><label>Nº cartas</label><input type="number" id="rg-cartas" placeholder="0" style="'+inp+'"></div>'
+   +'<div class="cf"><label>Gastado €</label><input type="number" id="rg-gast" placeholder="500" style="'+inp+'"></div>'
+   +'<div class="cf"><label>Vendido €</label><input type="number" id="rg-vend" placeholder="725" style="'+inp+'"></div>'
+   +'<div class="cf"><label>👥 Audiencia</label><input type="number" id="rg-aud" placeholder="40" style="'+inp+'"></div>'
+   +'</div>'
+   +'<div class="cf" style="margin-top:9px"><label>Notas (opcional)</label><input type="text" id="rg-notas" placeholder="qué funcionó, mejores cartas…" style="'+inp+'"></div>'
+   +'<button class="btn-save" style="margin-top:12px" onclick="addReg()">+ Guardar registro</button></div>';
+  var body='';
+  if(!months.length){body='<div class="empty-state" style="padding:26px;text-align:center;color:var(--t3);line-height:1.6">Aún no has registrado nada.<br>Cada vez que hagas un directo, break o subasta, apúntalo arriba y aquí verás tus totales reales por mes.</div>';}
+  months.forEach(function(mk){
+    var list=byM[mk].slice().sort(function(a,b){return (a.fecha||'')<(b.fecha||'')?1:-1;});
+    var y=+mk.slice(0,4),m=+mk.slice(5,7)-1;var label=mLabel(y,m);
+    var rV=0,rC=0;list.forEach(function(d){rV+=(d.ventas||0);rC+=(d.stock||0);});
+    var margen=rV-rC;var iva=Math.max(0,Math.round(margen*(CFG.iva||21)/121));
+    var auto=Math.round(CFG.reta||0);var irpf=Math.round(Math.max(0,margen-iva-auto)*0.20);
+    var limpio=margen-iva-auto-irpf;var cerrado=_closed.indexOf(mk)>=0;
+    var rows=list.map(function(d){
+      var mult=(d.ventas&&d.stock)?' ('+fmtD(d.ventas/d.stock)+')':'';
+      return '<div class="fp-row"><span>'+(d.fecha||'')+' · '+esc(d.tipo||'—')+(d.cartas?' · '+d.cartas+' cartas':'')+' · gastó '+fmt(d.stock)+'€ → <strong>'+fmt(d.ventas)+'€</strong>'+mult+(d.aud?' · 👥'+d.aud:'')+(d.notas?' · <span style="color:var(--t3)">'+esc(d.notas)+'</span>':'')+'</span><button class="btn-sm danger" onclick="delReg('+d.id+')">×</button></div>';
     }).join('');
-    let rV=0,rB=0,rN=0;weeks.forEach(w=>{const rd2=REAL[w.id];if(rd2){if(rd2.ventas)rV+=rd2.ventas;if(rd2.benef)rB+=rd2.benef;if(rd2.ventas||rd2.benef)rN++;}});
-
-    mainHtml+=`<div class="mes-sec" id="mes-${mesid}">
-      <div class="mes-hdr">
-        <div class="mes-name" style="color:${dotC}">${mc.label}</div>
-        <div class="mes-meta">${mc.ds} dir/sem · ${fmt(mc.vd)}€/dir · ${mc.pq} paq CH</div>
-        <div class="mes-b">~${fmt(benef)}€ benef. est.</div>
-      </div>
-      <div class="wlist">${wHtml}</div>
-      ${mc.br>0?`<div class="breaks-banner">
-        <div class="bb-icon">🎲</div>
-        <div class="bb-body">
-          <div class="bb-title">Breaks del mes — ${fmt(mc.br)}€ presupuestados</div>
-          <div class="bb-txt">${fmt(mc.br)}€ invertidos → ventas ~${fmt(rb.v)}€ → benef. neto ~${fmt(rb.nt)}€ · IVA -${fmt(rb.iva)}€ · Distribución: sem 1 (~25%), sem 2 (~35%), cierre (~40%)</div>
-        </div>
-      </div>`:''}
-      ${rN>0?`<div class="mfb-head" style="margin-top:14px">✅ Lo que pasó de verdad</div><div class="mes-footer-boxes" style="margin-top:2px;grid-template-columns:repeat(4,1fr)">
-        <div class="mfb real"><div class="mfb-v" style="color:var(--b)">${fmt(rV)}€</div><div class="mfb-l">Ventas reales</div></div>
-        <div class="mfb real"><div class="mfb-v" style="color:var(--g)">${fmt(rB)}€</div><div class="mfb-l">Benef. real</div></div>
-        <div class="mfb real"><div class="mfb-v" style="color:${rB>=benef?'var(--g)':'var(--re)'}">${rB>=benef?'+':''}${fmt(rB-benef)}€</div><div class="mfb-l">Δ vs plan mes</div></div>
-        <div class="mfb real"><div class="mfb-v">${rN}/${weeks.length}</div><div class="mfb-l">Sem. con datos</div></div>
-      </div>
-      <div style="margin-top:8px;padding:10px 12px;background:var(--s2);border:1px solid var(--bd);border-radius:9px;font-size:.7em;color:var(--t2);line-height:1.9"><strong>A reservar de este mes:</strong> IVA REBU (303): <strong style="color:var(--re)">${fmt(Math.round(rB*0.21))}€</strong> · Autónomos: <strong style="color:var(--re)">${fmt(Math.round(CFG.reta||0))}€</strong> · IRPF (130): <strong style="color:var(--re)">${fmt(Math.round(Math.max(0,rB-(CFG.reta||0))*0.20))}€</strong>${gpMes?` · Gastos: <strong style="color:var(--re)">${fmt(gpMes)}€</strong>`:``} → <strong style="color:var(--g)">Beneficio limpio: ${fmt(Math.round(rB-(CFG.reta||0)-Math.max(0,rB-(CFG.reta||0))*0.20-gpMes))}€</strong></div>`:''}
-      ${cerrado?`<div style="margin-top:12px;padding:12px 14px;background:var(--gl);border:1px solid #a7d7bf;border-radius:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><strong style="color:var(--g)">🔒 Mes cerrado</strong><button class="btn-sm" onclick="reabrirMes('${mesid}')">Reabrir</button></div><div style="font-size:.72em;color:var(--t2);line-height:1.7">Ventas ${fmt(rV)}€ · Beneficio ${fmt(rB)}€<br>IVA REBU (303, ~21%): ${fmt(Math.round(rB*0.21))}€ · Autónomos: −${fmt(Math.round(CFG.reta||0))}€ · IRPF (130, ~20%): ${fmt(Math.round(Math.max(0,rB-(CFG.reta||0))*0.20))}€<br><strong style="color:var(--g)">Limpio final: ${fmt(Math.round(rB-(CFG.reta||0)-Math.max(0,rB-(CFG.reta||0))*0.20))}€</strong></div></div>`:`<div style="margin-top:12px;text-align:right"><button class="btn-sm primary" onclick="cerrarMes('${mesid}',${rV},${rB})">🔒 Cerrar mes</button></div>`}
-    </div>`;
+    var closeBtn=cerrado?'<button class="btn-sm" onclick="reabrirMes(\''+mk+'\')">Reabrir mes</button>':'<button class="btn-sm primary" onclick="cerrarMes(\''+mk+'\','+rV+','+(margen-iva)+')">🔒 Cerrar mes</button>';
+    body+='<div class="mes-sec" id="mes-'+mk+'" style="margin-bottom:20px"><div class="dash-box">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px"><div style="font-weight:800;font-size:1.05em">'+label+(cerrado?' <span style="color:var(--g);font-size:.7em">🔒 cerrado</span>':'')+'</div><div style="font-size:.78em;color:var(--t2)">'+list.length+' registros · vendido <strong>'+fmt(rV)+'€</strong></div></div>'
+      +rows
+      +'<div style="margin-top:10px;padding:10px 12px;background:var(--s2);border:1px solid var(--bd);border-radius:9px;font-size:.72em;color:var(--t2);line-height:1.9">Margen (vendido−gastado): <strong>'+fmt(margen)+'€</strong> · IVA REBU: <strong style="color:var(--re)">−'+fmt(iva)+'€</strong> · Autónomos: <strong style="color:var(--re)">−'+fmt(auto)+'€</strong> · IRPF: <strong style="color:var(--re)">−'+fmt(irpf)+'€</strong> → <strong style="color:var(--g)">Limpio: '+fmt(limpio)+'€</strong></div>'
+      +'<div style="margin-top:10px;text-align:right">'+closeBtn+'</div>'
+      +'</div></div>';
   });
-  if(hiddenM>0||!cronoHide){
-    sbHtml+=`<div style="padding:8px 16px;"><button onclick="cronoHide=!cronoHide;LS.set('tcg_cronohide',cronoHide?'1':'0');save();renderCrono();" style="width:100%;padding:6px;background:var(--s2);border:1px solid var(--bd);color:var(--t2);border-radius:6px;font-size:.7em;font-weight:600;cursor:pointer;font-family:inherit;">${cronoHide?'▸ Mostrar '+hiddenM+' mes(es) pasado(s)':'▾ Ocultar meses pasados'}</button></div>`;
-  }
-  sbHtml+=`<div style="padding:12px 16px;margin-top:8px;border-top:1px solid var(--bd);">
-    <button onclick="sw('cfg',document.querySelector('.tab[data-t=cfg]'))" style="width:100%;padding:7px;background:var(--rl);border:1px solid var(--r);color:var(--r);border-radius:6px;font-size:0.75em;font-weight:600;cursor:pointer;font-family:'Avenir Next','Avenir',sans-serif;">+ Añadir mes</button>
-  </div>`;
-  mainHtml+=`<div style="padding:20px 0;border-top:1px solid var(--bd);margin-top:8px;">
-    <p style="font-size:0.8em;color:var(--t3);margin-bottom:10px;">¿Necesitas añadir más meses al plan?</p>
-    <button onclick="sw('cfg',document.querySelector('.tab[data-t=cfg]'))" style="padding:9px 18px;background:var(--r);border:none;color:white;border-radius:7px;font-size:0.82em;font-weight:600;cursor:pointer;font-family:'Avenir Next','Avenir',sans-serif;">+ Añadir mes desde Configuración</button>
-  </div>`;
-  document.getElementById('csidebar').innerHTML=sbHtml;
-  document.getElementById('cmain').innerHTML=mainHtml;
-  setupSpy();
+  cm.innerHTML=form+body;
+  if(sb){sb.innerHTML='<div class="csb-title">Meses con registros</div>'+(months.length?months.map(function(mk){var y=+mk.slice(0,4),m=+mk.slice(5,7)-1;return '<div class="csb-item" onclick="scrollToMes(\''+mk+'\')"><div class="csb-dot" style="background:var(--ac)"></div>'+mLabel(y,m)+'</div>';}).join(''):'<div style="padding:12px 16px;font-size:.72em;color:var(--t3)">Sin registros aún.</div>');}
 }
 
 function togWk(id){
@@ -1173,9 +1021,8 @@ function setupSpy(){
 // ══ SALUD DEL NEGOCIO ══
 function computeSalud(){
   var ventasR=0,stockR=0;
-  Object.keys(REAL).forEach(function(k){var r=REAL[k]||{};ventasR+=(r.ventas||0);stockR+=(r.est_stock_real||0);});
-  var svLatest=0,s90Latest=0,lastK='';
-  Object.keys(REAL).sort().forEach(function(k){var r=REAL[k]||{};if(r.stock_sv!=null||r.stock_90!=null){if(k>=lastK){lastK=k;svLatest=r.stock_sv||0;s90Latest=r.stock_90||0;}}});
+  DIRLOG.forEach(function(d){ventasR+=(d.ventas||0);stockR+=(d.stock||0);});
+  var svLatest=0,s90Latest=0;
   var margen=ventasR-stockR;
   var reserva=0;try{var Q=computeQuarters();Q.forEach(function(q){if(q.origen==='cerrado'||q.origen==='manual'){if(!(q.p303&&q.p130p))reserva+=(q.iva||0)+(q.p130||0)+(q.cuotas||0);}});}catch(e){}
   var retiros=0;(REPHIST||[]).forEach(function(r){(r.cats||[]).forEach(function(c){if(/sueldo|ocio/i.test(c.n||''))retiros+=(c.eur||0);});});
@@ -1240,7 +1087,7 @@ function addDirQuick(){
 function renderDash(){
   try{renderSalud();}catch(e){}
   // KPIs
-  const allReal=Object.values(REAL).filter(r=>r.benef);
+  const allReal=DIRLOG.filter(d=>(d.ventas||d.stock)).map(d=>({ventas:d.ventas||0,est_stock_real:d.stock||0,benef:(d.ventas&&d.stock)?rebuReal(d.ventas,d.stock).nt:((d.ventas||0)-(d.stock||0)),audiencia_media:d.aud||0,pico:d.pico||0,valoracion:d.valoracion||0,pct_directo:0,yt_subs:0,ig_subs:0}));
   const totalBenefReal=allReal.reduce((s,r)=>s+(r.benef||0),0);
   const totalBenefEst=allWeeks.filter(w=>w.est_benef).reduce((s,w)=>s+w.est_benef,0);
   const totalVentasReal=allReal.reduce((s,r)=>s+(r.ventas||0),0);
@@ -1253,12 +1100,12 @@ function renderDash(){
 
   const nd=nextDeadline();
   document.getElementById('dash-kpis').innerHTML=[
-    {l:'Capital actual',v:fmt(capitalReal)+'€',sub:`Plan: ~${fmt(capitalEst)}€`,c:'var(--g)'},
+    {l:'Capital actual',v:fmt(capitalReal)+'€',sub:'inicial + beneficio real',c:'var(--g)'},
     {l:'Beneficio bruto (margen)',v:(function(){try{var Q=computeQuarters();var qr=Q.filter(function(q){return q.origen==='cerrado'||q.origen==='manual';});return fmt(qr.reduce(function(a,q){return a+(q.margen||0);},0))+'€';}catch(e){return '—';}})(),sub:'ventas − coste · antes de impuestos',c:'var(--g)'},
-    {l:'Próximo plazo fiscal',v:nd?nd.plazo:'—',sub:nd?nd.lbl:'Fuera del plan',c:'var(--ac)'},
-    {l:'Multiplicador medio real',v:avgMult?fmtD(avgMult):'—',sub:`Estimado: ×${CFG.mult}`,c:avgMult>=CFG.mult?'var(--g)':'var(--re)'},
+    {l:'Próximo plazo fiscal',v:nd?nd.plazo:'—',sub:nd?nd.lbl:'Sin trimestres con datos',c:'var(--ac)'},
+    {l:'Multiplicador medio real',v:avgMult?fmtD(avgMult):'—',sub:'vendido ÷ gastado',c:'var(--g)'},
     {l:'Beneficio limpio final',v:(function(){try{var Q=computeQuarters();var qr=Q.filter(function(q){return q.origen==='cerrado'||q.origen==='manual';});return fmt(qr.reduce(function(a,q){return a+(q.rend||0)-(q.p130||0);},0))+'€';}catch(e){return '—';}})(),sub:'tras IVA, autónomos e IRPF (meses cerrados)',c:'var(--g)'},
-    {l:'Semanas con datos reales',v:allReal.length,sub:`de ${allWeeks.filter(w=>!w.noDir).length} semanas totales`,c:'var(--t1)'},
+    {l:'Ventas totales',v:fmt(totalVentasReal)+'€',sub:allReal.length+' registros',c:'var(--g)'},
     {l:'Ventas en directos',v:fmt((typeof DIRLOG!=='undefined'?DIRLOG:[]).reduce((a,d)=>a+(d.ventas||0),0))+'€',sub:`${(typeof DIRLOG!=='undefined'?DIRLOG:[]).length} directos registrados`,c:'var(--g)'},
     {l:'A reservar para Hacienda',v:(function(){try{var Q=computeQuarters();var qr=Q.filter(function(q){return q.origen==='cerrado'||q.origen==='manual';});return fmt(qr.reduce(function(a,q){return a+(q.iva||0)+(q.p130||0)+(q.cuotas||0);},0))+'€';}catch(e){return '—';}})(),sub:(function(){try{var Q=computeQuarters();var qr=Q.filter(function(q){return q.origen==='cerrado'||q.origen==='manual';});var lim=qr.reduce(function(a,q){return a+(q.rend||0)-(q.p130||0);},0);return 'IVA+IRPF+autón (meses cerrados) · te quedan ~'+fmt(lim)+'€ limpios';}catch(e){return '';}})(),c:'var(--re)'},
   ].map(k=>`<div class="kcard"><div class="kcard-label">${k.l}</div><div class="kcard-val" style="color:${k.c}">${k.v}</div><div class="kcard-sub">${k.sub}</div></div>`).join('');
@@ -1572,14 +1419,14 @@ function addMes(){
 }
 function delMes(i){if(!confirm(`¿Eliminar ${MESES[i].label}?`))return;MESES.splice(i,1);save();renderMcfgs();}
 function applyAll(){
-  CFG={capital:num('g-capital'),stock:num('g-stock'),mult:num('g-mult'),iva:num('g-iva'),sueldo:num('g-sueldo'),reta:num('g-reta'),fijo:num('g-fijo'),colchon:num('g-colchon'),hucha:num('g-hucha'),colchonObj:num('g-colchonobj'),trabajo:num('g-trabajo'),ingreso:num('g-ingreso'),vida:num('g-vida'),objetivo:num('g-objetivo')};
-  save();renderCrono();renderDash();renderPreview();
+  CFG.capital=num('g-capital');CFG.iva=num('g-iva');CFG.sueldo=num('g-sueldo');CFG.reta=num('g-reta');CFG.fijo=num('g-fijo');
+  save();renderCrono();renderDash();
 }
 function renderPreview(){
   let tb=0,ts=0,tiv=0;
   MESES.forEach(mc=>{const ie=mc.y===2028&&mc.m===0,inv=ie?CFG.stock:mc.ds*4*mc.vd;const r=rebu(inv),rb=rebu(mc.br||0);tb+=r.nt+rb.nt;tiv+=r.iva+rb.iva;ts+=ie?0:Math.round((r.nt+rb.nt)*CFG.sueldo/100);});
   const cf=CFG.capital+tb-ts;
-  document.getElementById('pvbar').innerHTML=[
+  var _pv=document.getElementById('pvbar');if(_pv)_pv.innerHTML=[
     [fmt(CFG.capital)+'€','Capital ini','var(--t1)'],
     ['~'+fmt(tb)+'€','Benef. total','var(--g)'],
     ['~'+fmt(ts)+'€','Sueldo ret.','var(--y)'],
@@ -1671,23 +1518,14 @@ function jumpTo(){calY=parseInt(document.getElementById('jy').value)||2028;calM=
 const QLBL={1:'T1 (ene-mar)',2:'T2 (abr-jun)',3:'T3 (jul-sep)',4:'T4 (oct-dic)'};
 function plazo303(y,q){return q===1?`1-20 abril ${y}`:q===2?`1-20 julio ${y}`:q===3?`1-20 octubre ${y}`:`1-30 enero ${y+1}`;}
 function mesRealTotals(idx){
-  let v=0,c=0,b=0,n=0;
-  allWeeks.filter(w=>w.mesIdx===idx).forEach(w=>{
-    const r=REAL[w.id];if(!r)return;
-    if(r.ventas){v+=r.ventas;n++;}
-    if(r.est_stock_real)c+=r.est_stock_real;
-    if(r.benef)b+=r.benef;
-  });
-  return{v,c,b,n};
+  var mc=MESES[idx];if(!mc)return{v:0,c:0,b:0,n:0};
+  var mk=mid(mc.y,mc.m),v=0,c=0,b=0,n=0;
+  DIRLOG.forEach(function(d){if((d.fecha||'').slice(0,7)===mk){var vv=d.ventas||0,cc=d.stock||0;if(vv||cc){v+=vv;c+=cc;b+=(vv&&cc)?rebuReal(vv,cc).nt:(vv-cc);n++;}}});
+  return{v:v,c:c,b:b,n:n};
 }
-function mesEstTotals(mc){
-  const ie=mc.y===2028&&mc.m===0;
-  const inv=ie?CFG.stock:mc.ds*4*mc.vd;
-  const r=rebu(inv),rb=rebu(mc.br||0);
-  return{v:r.v+rb.v,c:inv+(mc.br||0),benef:r.nt+rb.nt,iva:r.iva+rb.iva};
-}
+function mesEstTotals(mc){return{v:0,c:0,benef:0,iva:0};}
 function renderFiscal(){
-  if(allWeeks.length===0)renderCrono();
+  
   const hR=HUCHA.reduce((a,h)=>a+(h.rebu||0),0),hI=HUCHA.reduce((a,h)=>a+(h.irpf||0),0);
   const mesesDir=[...new Set(DIRLOG.map(d=>(d.fecha||'').slice(0,7)).filter(Boolean))].length;
   const hA=mesesDir*Math.round(CFG.reta||0);
@@ -1940,7 +1778,7 @@ function addChk(){
 
 // ══ BACKUP ══
 function computeQuarters(){
-  if(allWeeks.length===0)renderCrono();
+  
   const qs={};MESES.forEach((mc,idx)=>{const q=Math.floor(mc.m/3)+1,k=mc.y+'-T'+q;(qs[k]=qs[k]||{key:k,y:mc.y,q,items:[]}).items.push({mc,idx});});
   [...HUCHA,...REPHIST].forEach(h=>{const m=h.mes||(h.fecha||'').slice(0,7);if(!m)return;const y=+m.slice(0,4),q=Math.floor((+m.slice(5,7)-1)/3)+1,k=y+'-T'+q;if(!qs[k])qs[k]={key:k,y,q,items:[]};});
   const list=Object.values(qs).sort((a,b)=>a.y-b.y||a.q-b.q);const acum={};const out=[];const _closed=(function(){try{return JSON.parse(LS.get('tcg_closed')||'[]');}catch(e){return [];}})();
@@ -1953,7 +1791,7 @@ function computeQuarters(){
     const hV=hu.reduce((a2,h)=>a2+(h.ventas||0),0),hC=hu.reduce((a2,h)=>a2+(h.coste||0),0);
     const ventas=manual?(fs0.oV||0):(nR>0?rV:(hV>0?hV:eV)),coste=manual?(fs0.oC||0):(nR>0?rC:(hV>0?hC:eC));
     const margen=ventas-coste,iva=Math.max(0,Math.round(margen*CFG.iva/121));
-    const mReal=qM.filter(function(m){return _closed.includes(m)||Object.keys(REAL).some(function(k){return k.indexOf(m)===0&&REAL[k]&&REAL[k].benef;});}).length;const cuotas=Math.round(((CFG.reta||0)+(CFG.fijo||0))*(mReal||qd.items.length));
+    const mReal=qM.filter(function(m){return _closed.includes(m)||DIRLOG.some(function(d){return (d.fecha||'').slice(0,7)===m&&(d.ventas||d.stock);});}).length;const cuotas=Math.round(((CFG.reta||0)+(CFG.fijo||0))*(mReal||qd.items.length));
     const gq=fs0.gastos||0;
     const dua=PEDIDOS.filter(p=>qM.includes(p.mes_destino)).reduce((a,p)=>a+(p.coste_import||0),0);
     const gfij=GASTOS.reduce((a3,g3)=>a3+(+g3.importe||0),0)*qd.items.length;const gext=GEXTRA.filter(g3=>qM.includes((g3.wid||'').slice(0,7))).reduce((a3,g3)=>a3+(+g3.importe||0),0);const cerrado=qM.some(function(m){return _closed.includes(m);});const rend=(margen-iva)-cuotas-gq-dua-gfij-gext;
@@ -2056,7 +1894,7 @@ function importData(input){
       if(!d.cfg||!d.meses){alert('Archivo no válido: no parece un backup del planner.');input.value='';return;}
       if(!confirm('Esto REEMPLAZARÁ todos los datos actuales por los del backup ('+(d.exported?d.exported.split('T')[0]:'fecha desconocida')+'). ¿Continuar?')){input.value='';return;}
       CFG=d.cfg;MESES=d.meses;REAL=d.real||{};CAL=d.cal||{};PEDIDOS=d.pedidos||[];FISCAL=d.fiscal||{};CHECK=d.check||JSON.parse(JSON.stringify(CHECK_DEFAULT));BREAKS=d.breaks||[];CONTENT=d.content||[];CLIENTES=d.clientes||[];INV=d.inv||[];DIRLOG=d.dirlog||[];HUCHA=d.hucha||[];GASTOS=d.gastos||[];GEXTRA=d.gextra||[];NOTAS=d.notas||[];PAGADO=d.pagado||{};REPMES=d.repmes||{};REPSAVED=d.repsaved||{};if(d.split)SPLIT=d.split;REPHIST=d.rephist||[];
-      save();renderCrono();renderDash();renderMcfgs();renderPreview();renderHoy();
+      save();renderCrono();renderDash();renderHoy();
       alert('Backup restaurado correctamente.');
     }catch(err){alert('Error al leer el archivo: '+err.message);}
     input.value='';
@@ -2078,7 +1916,7 @@ function todayStr(){const t=new Date();return `${t.getFullYear()}-${pad(t.getMon
 
 function renderHoy(){
   const el=document.getElementById('hoyw');if(!el)return;
-  if(allWeeks.length===0)renderCrono();
+  
   const ts=todayStr(),t=new Date();
   const wk=allWeeks.find(w=>w.mesId===mid(t.getFullYear(),t.getMonth())&&w.sem===Math.min(Math.ceil(t.getDate()/7),w.mesId==='2028-01'?4:5));
   let evs=[];
@@ -2091,7 +1929,6 @@ function renderHoy(){
   (CAL[ts]||[]).forEach(e=>{if(e.c==='ce-dir')der.push('🎥 Hoy hay directo — prepara stock, set y guion: '+e.t);if(e.c==='ce-brk')der.push('🎲 Hoy hay break — revisa las plazas vendidas: '+e.t);if(e.c==='ce-buy')der.push('📦 Hoy toca comprar en Cardhobby: '+e.t);});
   (CAL[k2]||[]).forEach(e=>{if(e.c==='ce-dir')der.push('📣 Anuncia en WhatsApp (48h antes) el directo del '+k2.slice(8)+'/'+k2.slice(5,7)+': '+e.t);if(e.c==='ce-brk')der.push('📣 Abre la lista de plazas del break del '+k2.slice(8)+'/'+k2.slice(5,7));});
   CONTENT.filter(c=>c.fecha===ts&&c.estado!=='publicado').forEach(c=>der.push('✏️ Hoy toca publicar: '+(CTIPOS[c.tipo]||c.tipo)+' — '+c.titulo));
-  if(t.getDate()<=7){const nx2=MESES.find(m=>(m.y>t.getFullYear())||(m.y===t.getFullYear()&&m.m>t.getMonth()));if(nx2&&(PEDIDOS.length||t.getFullYear()>=2027))der.push('📦 Semana 1 — regla de oro: empieza las compras de '+nx2.label+' en Cardhobby (150-200€/día).');}
   const nd0=nextDeadline();
   const _now=new Date();
   const avisos=[];
@@ -2106,7 +1943,7 @@ function renderHoy(){
   const _hh=_now.getHours();const _saludo=_hh<13?'Buenos días':_hh<21?'Buenas tardes':'Buenas noches';
   const _mk=`${_now.getFullYear()}-${pad(_now.getMonth()+1)}`;
   const _huM=HUCHA.filter(h=>(h.mes||(h.fecha||'').slice(0,7))===_mk).reduce((a,h)=>a+((h.ventas||0)-(h.coste||0)-(h.rebu||0)-(h.irpf||0)),0);
-  const _realM=allWeeks.reduce((a,w)=>{const rr=REAL[w.id];return a+((w.mesId===_mk&&rr&&rr.benef)?rr.benef:0);},0);
+  const _realM=DIRLOG.reduce((a,d)=>a+(((d.fecha||'').slice(0,7)===_mk&&(d.ventas||d.stock))?((d.ventas&&d.stock)?rebuReal(d.ventas,d.stock).nt:((d.ventas||0)-(d.stock||0))):0),0);
   const _benM=_realM||_huM;const _objMes=CFG.objetivo||0;const _bmNet=_benM-_gTot;
   const _pctO=_objMes?Math.min(100,Math.round(_bmNet/_objMes*100)):0;
   const _diasM=new Date(_now.getFullYear(),_now.getMonth()+1,0).getDate()-_now.getDate();
@@ -2114,15 +1951,7 @@ function renderHoy(){
   const _mcH=MESES.find(m=>m.y===_now.getFullYear()&&m.m===_now.getMonth());
   const _dirHoy=(CAL[ts]||[]).some(e=>e.c==='ce-dir');
   let breakHtml='';
-  if(_mcH){
-    const dirMes=Math.max(1,(_mcH.ds||2)*4);
-    const compraMes=(_mcH.pq||0)*(_mcH.vp||0);
-    const stockDir=compraMes?Math.round(compraMes/dirMes):0;
-    const gastoDir=_gTot?Math.round(_gTot/dirMes):0;
-    const be=stockDir+gastoDir;
-    if(be>0)breakHtml=`<div class="dash-box" style="margin-bottom:16px"><div class="box-title"><span>⚖️</span> Punto de equilibrio ${_dirHoy?'de hoy':'por directo'}</div><div style="font-size:.8em;color:var(--t2);line-height:1.6">Con ~<strong>${fmt(stockDir)}€</strong> de stock por directo${gastoDir?` más <strong>${fmt(gastoDir)}€</strong> de gastos fijos prorrateados`:''}, necesitas vender <strong style="color:var(--ac2)">≥ ${fmt(be)}€</strong> para no perder (antes de impuestos). Tu plan estima ${fmt(_mcH.vd)}€ por directo.</div></div>`;
-  }
-  let qcHtml='';
+    let qcHtml='';
   if(true){
     qcHtml=`<div class="dash-box" style="margin-bottom:16px"><div class="box-title"><span>✅</span> Cerrar el directo de hoy</div>
       <div class="chk-add" style="grid-template-columns:repeat(4,1fr) auto;gap:8px;align-items:end">
@@ -2454,9 +2283,10 @@ function sw(id,tab){
   var _vw=document.getElementById('v-'+id);if(_vw)_vw.classList.add('on');
   tab.classList.add('on');
   if(id==='cal')renderCal();
-  if(id==='cfg'){renderMcfgs();renderPreview();updBkLast();syncCfg();}
+  if(id==='cfg'){updBkLast();syncCfg();}
   if(id==='pedidos')renderPedidos();
   if(id==='dash')renderDash();
+  if(id==='crono')renderCrono();
   if(id==='dyb')renderDyB();
   if(id==='cont')renderCont();
   if(id==='vdir')renderVD();
@@ -2472,7 +2302,7 @@ document.addEventListener('keydown',e=>{
 // ══ INIT ══
 load();
 if(!CHECK)CHECK=JSON.parse(JSON.stringify(CHECK_DEFAULT));
-if(CFG.reta===undefined)CFG.reta=87;
+if(CFG.reta===undefined)CFG.reta=275;
 if(CFG.fijo===undefined)CFG.fijo=0;
 if(CFG.colchon===undefined)CFG.colchon=10;
 if(CFG.hucha===undefined)CFG.hucha=10;
