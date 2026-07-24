@@ -492,7 +492,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ac)!impo
     <button class="tab" data-t="check" onclick="sw('check',this)"><span class="ti">✓</span>Checklist</button>
     <button class="tab" data-t="cfg" onclick="sw('cfg',this)"><span class="ti">⚙</span>Config</button>
   </nav>
-  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v81</div>
+  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v82</div>
 </aside>
 <main class="content">
 
@@ -1016,14 +1016,22 @@ function renderCrono(){
     var closeBox=cerrado?'<div style="margin-top:12px;padding:12px 14px;background:#eef7f1;border:1px solid #a7d7bf;border-radius:10px"><div style="display:flex;justify-content:space-between;align-items:center"><strong style="color:var(--g)">🔒 Mes cerrado</strong><button class="btn-sm" onclick="reabrirMes(\''+mk+'\')">Reabrir</button></div></div>':'<div style="margin-top:12px;text-align:right"><button class="btn-sm primary" onclick="cerrarMes(\''+mk+'\','+C.rV+','+(C.margen-C.iva)+')">🔒 Cerrar mes</button></div>';
     var entriesBlock=cerrado?'<details style="margin-top:2px"><summary style="cursor:pointer;font-size:.76em;color:var(--t3);font-weight:600;list-style:none;padding:6px 0">▸ Ver los '+list.length+' registros</summary><div class="wlist" style="margin-top:8px">'+rows+'</div></details>':'<div class="wlist">'+rows+'</div>';
     var box=function(v,l,c){return '<div class="mfb"><div class="mfb-v"'+(c?' style="color:'+c+'"':'')+'>'+v+'</div><div class="mfb-l">'+l+'</div></div>';};
-    body+='<div class="mes-sec" id="mes-'+mk+'">'
-      +'<div class="mes-hdr"><div class="mes-name" style="color:'+col+'">'+label+(cerrado?' 🔒':'')+'</div><div class="mes-meta">'+list.length+' registros · '+nDir+' directos</div><div class="mes-b">Vendido '+fmt(C.rV)+'€</div></div>'
-      +entriesBlock
-      +'<div class="mfb-head">✅ Resumen del mes</div><div class="mes-footer-boxes">'
+    var boxes='<div class="mfb-head">✅ Resumen del mes</div><div class="mes-footer-boxes">'
         +box(nDir,'Directos')+box(fmt(C.rV)+'€','Vendido','var(--b)')+box(fmt(C.rC)+'€','Gastado')+box(fmt(C.limpio)+'€','Beneficio limpio','var(--g)')
         +(multMedio?box(fmtD(multMedio),'Mult medio'):'')+(audMedia?box(Math.round(audMedia),'Audiencia'):'')
-      +'</div>'+redes+fisc+closeBox
       +'</div>';
+    if(cerrado){
+      body+='<div class="mes-sec" id="mes-'+mk+'"><details><summary style="list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 15px;background:#eef7f1;border:1px solid #a7d7bf;border-radius:11px">'
+        +'<span style="font-weight:800;color:'+col+'">🔒 '+label+'</span>'
+        +'<span style="font-size:.82em;color:var(--t2)">'+nDir+' directos · vendido '+fmt(C.rV)+'€ · <strong style="color:var(--g)">limpio '+fmt(C.limpio)+'€</strong></span>'
+        +'<span style="margin-left:auto;display:flex;align-items:center;gap:10px"><span style="font-size:.72em;color:var(--t3)">ver más ▾</span><button class="btn-sm" onclick="event.preventDefault();event.stopPropagation();reabrirMes(\''+mk+'\')">Reabrir</button></span>'
+        +'</summary><div style="margin-top:12px"><div class="wlist">'+rows+'</div>'+boxes+redes+fisc+'</div></details></div>';
+    } else {
+      body+='<div class="mes-sec" id="mes-'+mk+'">'
+        +'<div class="mes-hdr"><div class="mes-name" style="color:'+col+'">'+label+'</div><div class="mes-meta">'+list.length+' registros · '+nDir+' directos</div><div class="mes-b">Vendido '+fmt(C.rV)+'€</div></div>'
+        +entriesBlock+boxes+redes+fisc+closeBox
+        +'</div>';
+    }
   });
   var _yrs=[];months.forEach(function(mk){var y=mk.slice(0,4);if(_yrs.indexOf(y)<0)_yrs.push(y);});_yrs.sort();
   var filterBar=months.length?'<div class="dash-box" style="margin-bottom:18px;padding:12px 16px"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span style="font-size:.76em;font-weight:700;color:var(--t2)">🔎 Filtrar</span><select id="flt-y" onchange="setFlt()" style="'+inp+';width:auto"><option value="">Todos los años</option>'+_yrs.map(function(y){return '<option value="'+y+'"'+(_fltY===y?' selected':'')+'>'+y+'</option>';}).join('')+'</select><select id="flt-m" onchange="setFlt()" style="'+inp+';width:auto"><option value="">Todos los meses</option>'+MNS.map(function(nm,i){return '<option value="'+pad(i+1)+'"'+(_fltM===pad(i+1)?' selected':'')+'>'+nm+'</option>';}).join('')+'</select>'+((_fltY||_fltM)?'<button class="btn-sm" onclick="clearFlt()">Quitar filtro</button>':'')+'</div></div>':'';
