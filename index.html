@@ -507,7 +507,7 @@ details[open]>.mband .mchev{transform:rotate(90deg)}
     <button class="tab" data-t="check" onclick="sw('check',this)"><span class="ti">✓</span>Checklist</button>
     <button class="tab" data-t="cfg" onclick="sw('cfg',this)"><span class="ti">⚙</span>Config</button>
   </nav>
-  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v90</div>
+  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v91</div>
 </aside>
 <main class="content">
 
@@ -941,7 +941,8 @@ function entryCard(d){
     +'<div style="line-height:1.65;font-size:.82em">'+badge+' <span style="color:var(--t3)">'+(d.fecha||'')+'</span> · '+(d.cartas?d.cartas+' cartas · ':'')+'invirtió '+fmt(_cd)+'€'+(d.envio?' <span style="color:var(--t3)">(cromos '+fmt(d.stock)+' + envío '+fmt(d.envio)+')</span>':'')+' → recibió <strong>'+fmt(d.ventas)+'€</strong>'+mult+(ce?' · <span style="color:var(--re)">−'+fmt(ce)+'€ com.</span>':'')+(d.aud?' · 👥'+d.aud:'')+(d.notas?'<br><span style="color:var(--t3)">📝 '+esc(d.notas)+'</span>':'')+'</div>'
     +'<span style="white-space:nowrap;display:flex;gap:4px"><button class="btn-sm" onclick="editReg('+d.id+')">✎</button><button class="btn-sm danger" onclick="delReg('+d.id+')">×</button></span></div>';
 }
-function toggleRegForm(){_showForm=!_showForm;var f=document.getElementById('reg-form');if(f)f.style.display=_showForm?'block':'none';var b=document.getElementById('reg-addbtn');if(b)b.textContent=_showForm?'× Cerrar formulario':'+ Añadir directo / break';}
+function toggleRegForm(){_showForm=!_showForm;var f=document.getElementById('reg-form');if(f)f.style.display=_showForm?'block':'none';}
+function openReg(tp){_showForm=true;__editId=null;var f=document.getElementById('reg-form');if(f)f.style.display='block';var ts=document.getElementById('rg-tipo');if(ts)ts.value=tp;var bn=document.getElementById('rg-editing');if(bn)bn.style.display='none';var sv=document.getElementById('rg-save');if(sv)sv.textContent='+ Guardar';var e=document.getElementById('rg-fecha');if(e){try{e.focus();e.scrollIntoView({behavior:'smooth',block:'center'});}catch(_){}}}
 function editReg(id){
   var d=DIRLOG.find(function(x){return x.id===id;});if(!d)return;
   __editId=id;_showForm=true;
@@ -993,7 +994,7 @@ function renderCrono(){
 
   // ── AÑADIR + FORM (oculto) ──
   var showF=(_showForm||__editId);
-  var addBtn='<button class="btn-save" id="reg-addbtn" style="margin-bottom:14px" onclick="toggleRegForm()">'+(showF?'× Cerrar formulario':'+ Añadir directo / break')+'</button>';
+  var addBtn='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">'+'<button class="btn-save" style="margin:0" onclick="openReg(\'Break\')">+ Directo</button>'+'<button class="btn-save" style="margin:0;background:var(--b)" onclick="openReg(\'Venta directa\')">+ Venta suelta</button>'+'<button class="btn-save" style="margin:0;background:var(--p)" onclick="newPedido()">+ Pedido</button>'+(showF?'<button class="btn-sm" style="margin:0" onclick="toggleRegForm()">× Cerrar</button>':'')+'</div>';
   var form='<div id="reg-form" style="display:'+(showF?'block':'none')+'"><div class="dash-box" style="margin-bottom:18px"><div class="box-title"><span>➕</span> Registrar lo que ha pasado</div>'
    +'<div id="rg-editing" style="display:none;font-size:.74em;color:var(--ac2,#a9781f);background:var(--acl,#f6efe0);border:1px solid var(--bd);border-radius:8px;padding:7px 11px;margin-bottom:10px"></div>'
    +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:9px">'
@@ -1051,9 +1052,9 @@ function renderCrono(){
       var list=byM[mk].slice().sort(function(a,b){return (a.fecha||'')<(b.fecha||'')?1:-1;});
       var y=+mk.slice(0,4),m=+mk.slice(5,7)-1;var label=mLabel(y,m);var col=MPAL[m%12];
       var C=calcM(list);var cerrado=_closed.indexOf(mk)>=0;var pedNew=cerrado&&_impsnap[mk]!=null&&importMes(mk)>_impsnap[mk];
-      var nDir=0,multS=0,multN=0,audS=0,audN=0,picoMax=0,valS=0,valN=0,pctS=0,pctN=0,ytLast=0,igLast=0;
+      var nDir=0,nVta=0,multS=0,multN=0,audS=0,audN=0,picoMax=0,valS=0,valN=0,pctS=0,pctN=0,ytLast=0,igLast=0;
       list.forEach(function(d){
-        if(d.tipo!=='Venta directa')nDir++;
+        if(d.tipo!=='Venta directa')nDir++;else nVta++;
         var _cd2=costeD(d);if(d.ventas&&_cd2){multS+=d.ventas/_cd2;multN++;}
         if(d.aud){audS+=d.aud;audN++;}if(d.pico&&d.pico>picoMax)picoMax=d.pico;
         if(d.valoracion){valS+=d.valoracion;valN++;}if(d.pct_directo){pctS+=d.pct_directo;pctN++;}
@@ -1082,7 +1083,7 @@ function renderCrono(){
         +'<summary class="mband" style="background:'+col+'12;border-left:5px solid '+col+'">'
           +'<span class="mchev">▸</span>'
           +'<span class="mes-name" style="color:'+col+';font-size:1.02em">'+label+(cerrado?' <span style="font-size:.6em">🔒</span>':'')+'</span>'
-          +'<span style="font-size:.75em;color:var(--t2)">'+nDir+' directos</span>'+(pedNew?'<span style="background:var(--rel);color:var(--re);font-size:.62em;font-weight:600;padding:2px 8px;border-radius:20px;margin-left:4px">⚠ pedido nuevo · reábrelo para recalcular</span>':'')
+          +'<span style="font-size:.75em;color:var(--t2)">'+nDir+' directos'+(nVta?' · '+nVta+' venta'+(nVta>1?'s':''):'')+'</span>'+(pedNew?'<span style="background:var(--rel);color:var(--re);font-size:.62em;font-weight:600;padding:2px 8px;border-radius:20px;margin-left:4px">⚠ pedido nuevo · reábrelo para recalcular</span>':'')
           +'<span style="margin-left:auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:.78em"><span>vendido <strong>'+fmt(C.rV)+'€</strong></span><span style="color:var(--g)">limpio <strong>'+fmt(C.limpio)+'€</strong></span><span style="color:var(--ac2)">ROI '+monthRoi+'</span>'+actBtn+'</span>'
         +'</summary>'
         +'<div style="padding:6px 4px">'+fiscLine+mtable+redes+'</div>'
