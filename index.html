@@ -507,7 +507,7 @@ details[open]>.mband .mchev{transform:rotate(90deg)}
     <button class="tab" data-t="check" onclick="sw('check',this)"><span class="ti">✓</span>Checklist</button>
     <button class="tab" data-t="cfg" onclick="sw('cfg',this)"><span class="ti">⚙</span>Config</button>
   </nav>
-  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v88</div>
+  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v90</div>
 </aside>
 <main class="content">
 
@@ -670,6 +670,10 @@ details[open]>.mband .mchev{transform:rotate(90deg)}
     <input type="date" id="np-fecha">
     <label>Importe total estimado (€)</label>
     <input type="number" id="np-importe" placeholder="ej: 1250" step="50">
+    <label>Envío del pedido (€)</label>
+    <input type="number" id="np-envio" placeholder="ej: 100" step="5">
+    <label>Aduanas / DUA (€)</label>
+    <input type="number" id="np-aduana" placeholder="ej: 60" step="5">
     <label>Número de paquetes</label>
     <input type="number" id="np-paquetes" value="4" min="1">
     <label>Tipo de producto</label>
@@ -911,7 +915,11 @@ function ensureMonths(){
 }
 function comEur(d){return (d&&d.com)?Math.round((d.ventas||0)*(CFG.comision||0)/100):0;}
 function costeD(d){return (d.stock||0)+(d.envio||0);}
-function calcM(list){var rV=0,rC=0,cm2=0;list.forEach(function(d){rV+=(d.ventas||0);rC+=costeD(d);cm2+=comEur(d);});var margen=rV-rC;var iva=Math.max(0,Math.round(margen*(CFG.iva||21)/121));var auto=Math.round(CFG.reta||0);var irpf=Math.round(Math.max(0,margen-iva-auto-cm2)*0.20);return{rV:rV,rC:rC,comisM:cm2,margen:margen,iva:iva,auto:auto,irpf:irpf,limpio:margen-iva-cm2-auto-irpf};}
+function pedMes(p){return p.mes_destino||(p.fecha_inicio||p.fecha||'').slice(0,7);}
+function pedImp(p){return (p.envio_asia||0)+(p.envio_dhl||0)+(p.coste_import||0)+(p.aduana||0)+(p.envio||0);}
+function importMes(mk){if(!mk)return 0;return (typeof PEDIDOS!=='undefined'?PEDIDOS:[]).filter(function(p){return pedMes(p)===mk;}).reduce(function(a,p){return a+pedImp(p);},0);}
+function importShare(mk,n){return n>0?Math.round(importMes(mk)/n):0;}
+function calcM(list){var rV=0,rC=0,cm2=0;list.forEach(function(d){rV+=(d.ventas||0);rC+=costeD(d);cm2+=comEur(d);});var _mk=list.length?(list[0].fecha||'').slice(0,7):'';rC+=importMes(_mk);var margen=rV-rC;var iva=Math.max(0,Math.round(margen*(CFG.iva||21)/121));var auto=Math.round(CFG.reta||0);var irpf=Math.round(Math.max(0,margen-iva-auto-cm2)*0.20);return{rV:rV,rC:rC,comisM:cm2,margen:margen,iva:iva,auto:auto,irpf:irpf,limpio:margen-iva-cm2-auto-irpf};}
 function regChartSVG(md){
   if(!md.length)return '';
   var maxV=1;md.forEach(function(x){maxV=Math.max(maxV,x.vendido,x.limpio);});
@@ -956,7 +964,7 @@ function goMonth(mk){_fltText='';_fltTipo='';renderCrono();setTimeout(function()
 function addReg(){
   var f=str('rg-fecha');if(!f){alert('Pon la fecha.');return;}
   var cb=document.getElementById('rg-com');
-  var obj={fecha:f,tipo:str('rg-tipo'),cartas:num('rg-cartas'),stock:num('rg-gast'),envio:num('rg-envio'),ventas:num('rg-vend'),aud:num('rg-aud'),
+  var obj={fecha:f,tipo:str('rg-tipo'),cartas:num('rg-cartas'),stock:num('rg-gast'),ventas:num('rg-vend'),aud:num('rg-aud'),
     pico:num('rg-pico'),valoracion:num('rg-val'),pct_directo:num('rg-pct'),yt_subs:num('rg-yt'),ig_subs:num('rg-ig'),com:cb?cb.checked:false,notas:str('rg-notas')};
   if(__editId){var d=DIRLOG.find(function(x){return x.id===__editId;});if(d){Object.keys(obj).forEach(function(k){d[k]=obj[k];});}__editId=null;}
   else{obj.id=Date.now();obj.evento='';DIRLOG.unshift(obj);}
@@ -968,6 +976,7 @@ function renderCrono(){
   var cm=document.getElementById('cmain');if(!cm)return;
   var sb=document.getElementById('csidebar');
   var _closed=(function(){try{return JSON.parse(LS.get('tcg_closed')||'[]');}catch(e){return[];}})();
+  var _impsnap=(function(){try{return JSON.parse(LS.get('tcg_impsnap')||'{}');}catch(e){return{};}})();
   var byM={};DIRLOG.forEach(function(d){var mk=(d.fecha||'').slice(0,7);if(!mk)return;(byM[mk]=byM[mk]||[]).push(d);});
   var months=Object.keys(byM).sort().reverse();
   var inp='padding:8px 10px;border:1px solid var(--bd);border-radius:8px;font-family:inherit;font-size:.9em;width:100%';
@@ -990,7 +999,7 @@ function renderCrono(){
    +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:9px">'
    +'<div class="cf"><label>Fecha</label><input type="date" id="rg-fecha" value="'+todayStr()+'" style="'+inp+'"></div>'
    +'<div class="cf"><label>Tipo</label><select id="rg-tipo" style="'+inp+'"><option>Break</option><option>Subasta</option><option>Mixto</option><option>Venta directa</option></select></div>'
-   +fld('Nº cartas','rg-cartas','0')+fld('Gasto cromos €','rg-gast','500')+fld('Envío y aduanas €','rg-envio','0')+fld('Recibido €','rg-vend','725')+fld('👥 Audiencia','rg-aud','40')
+   +fld('Nº cartas','rg-cartas','0')+fld('Gastado (cromos) €','rg-gast','500')+fld('Recibido €','rg-vend','725')+fld('👥 Audiencia','rg-aud','40')
    +'</div>'
    +'<label style="display:flex;align-items:center;gap:8px;margin-top:11px;font-size:.78em;color:var(--t2);cursor:pointer"><input type="checkbox" id="rg-com" checked style="width:16px;height:16px;accent-color:var(--ac)"> Aplicar comisión de plataforma ('+(CFG.comision||8)+'%) — desmárcalo si la venta fue por fuera</label>'
    +'<details class="mas-detalles-reg" style="margin-top:11px"><summary style="cursor:pointer;font-size:.76em;color:var(--t3);font-weight:600;list-style:none">▸ Más detalles — redes, audiencia y valoración</summary>'
@@ -1015,12 +1024,12 @@ function renderCrono(){
   var mAsc=Object.keys(byM).sort().slice(-12);
   var md=mAsc.map(function(mk){var y=+mk.slice(0,4),m=+mk.slice(5,7)-1;var c=calcM(byM[mk]);return{label:mLabel(y,m),short:MNS[m].slice(0,3),vendido:c.rV,limpio:c.limpio};});
   var byT={};DIRLOG.forEach(function(d){var t=d.tipo||'—';var o=byT[t]=byT[t]||{n:0,v:0,c:0,ms:0,mn:0};o.n++;o.v+=d.ventas||0;o.c+=costeD(d);var _cc=costeD(d);if(d.ventas&&_cc){o.ms+=d.ventas/_cc;o.mn++;}});
-  var tipoRows=Object.keys(byT).map(function(t){var o=byT[t];var col=TCOL[t]||'#6b6b63';return '<div class="fp-row"><span><span style="color:'+col+';font-weight:700">'+esc(t)+'</span> · '+o.n+' reg · vendido '+fmt(o.v)+'€ · margen '+fmt(o.v-o.c)+'€</span><strong>'+(o.mn?fmtD(o.ms/o.mn):'—')+'</strong></div>';}).join('');
+  var tipoRows=Object.keys(byT).map(function(t){var o=byT[t];var col=TCOL[t]||'#6b6b63';return '<div class="fp-row"><span><span style="color:'+col+';font-weight:700">'+esc(t)+'</span> · '+o.n+' reg · vendido '+fmt(o.v)+'€ · margen '+fmt(o.v-o.c)+'€</span><strong>'+(o.c>0?Math.round((o.v-o.c)/o.c*100)+'%':'—')+'</strong></div>';}).join('');
   var byDay={};DIRLOG.forEach(function(d){if(d.fecha&&d.ventas){var wd=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][new Date(d.fecha+'T12:00').getDay()];(byDay[wd]=byDay[wd]||[]).push(d.ventas);}});
   var bestDay=Object.keys(byDay).map(function(k){var a=byDay[k];return{k:k,avg:a.reduce(function(x,y){return x+y;},0)/a.length};}).sort(function(a,b){return b.avg-a.avg;})[0];
   var analisis=md.length?'<details class="dash-box" style="margin-bottom:18px"><summary style="cursor:pointer;font-weight:700;font-size:.92em;list-style:none">📊 Evolución y análisis</summary><div style="margin-top:12px">'
    +regChartSVG(md)+'<div style="font-size:.64em;color:var(--t3);text-align:center;margin-top:2px"><span style="color:#c9b27a">■</span> vendido · <span style="color:#2f9e6f">■</span> beneficio limpio</div>'
-   +'<div class="mfb-head" style="margin-top:14px;margin-bottom:6px">Rentabilidad por tipo · multiplicador medio</div>'+(tipoRows||'<div style="font-size:.72em;color:var(--t3)">Sin datos.</div>')
+   +'<div class="mfb-head" style="margin-top:14px;margin-bottom:6px">Rentabilidad por tipo · ROI medio (bruto)</div>'+(tipoRows||'<div style="font-size:.72em;color:var(--t3)">Sin datos.</div>')
    +(bestDay?'<div style="margin-top:11px;padding:9px 12px;background:var(--acl,#f6efe0);border:1px solid var(--bd);border-radius:9px;font-size:.76em;color:var(--t2)">📅 Tu mejor día es <strong>'+bestDay.k+'</strong> — media de <strong>'+fmt(bestDay.avg)+'€</strong> por directo</div>':'')
    +'</div></details>':'';
 
@@ -1041,7 +1050,7 @@ function renderCrono(){
     shown.forEach(function(mk){
       var list=byM[mk].slice().sort(function(a,b){return (a.fecha||'')<(b.fecha||'')?1:-1;});
       var y=+mk.slice(0,4),m=+mk.slice(5,7)-1;var label=mLabel(y,m);var col=MPAL[m%12];
-      var C=calcM(list);var cerrado=_closed.indexOf(mk)>=0;
+      var C=calcM(list);var cerrado=_closed.indexOf(mk)>=0;var pedNew=cerrado&&_impsnap[mk]!=null&&importMes(mk)>_impsnap[mk];
       var nDir=0,multS=0,multN=0,audS=0,audN=0,picoMax=0,valS=0,valN=0,pctS=0,pctN=0,ytLast=0,igLast=0;
       list.forEach(function(d){
         if(d.tipo!=='Venta directa')nDir++;
@@ -1056,8 +1065,9 @@ function renderCrono(){
       var redes=hasRedes?'<div style="margin-top:12px;padding:11px 13px;background:var(--s2);border:1px solid var(--bd);border-radius:9px"><div style="font-size:.62em;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:9px">📱 Redes y audiencia del mes</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(76px,1fr));gap:10px">'
         +(ytLast?mini('YouTube',fmt(ytLast),'#d24a4a'):'')+(igLast?mini('Instagram',fmt(igLast),'#8b5cf6'):'')+(audMedia?mini('Aud. media',Math.round(audMedia),'#3b82f6'):'')+(picoMax?mini('Pico',picoMax,'#3b82f6'):'')+(valMedia?mini('Valoración',valMedia.toFixed(1)+'/5','#c2760f'):'')+(pctMedio?mini('% directo',Math.round(pctMedio)+'%','#2f9e6f'):'')
         +'</div></div>':'';
+      var impPer=importShare(mk,list.length);
       var trows=list.map(function(d){
-        var inv=costeD(d),mg=(d.ventas||0)-inv,ce=comEur(d),bf=mg-ce,roi=inv>0?Math.round(mg/inv*100):0;var tc=TCOL[d.tipo]||'#6b6b63';
+        var inv=costeD(d)+impPer,mg=(d.ventas||0)-inv,ce=comEur(d),bf=mg-ce,roi=inv>0?Math.round(mg/inv*100):0;var tc=TCOL[d.tipo]||'#6b6b63';
         return '<tr><td>'+(d.fecha||'').slice(8)+'/'+(d.fecha||'').slice(5,7)+'</td>'
           +'<td><span style="background:'+tc+'1e;color:'+tc+';font-weight:500;font-size:.86em;padding:2px 8px;border-radius:20px">'+esc(d.tipo||'—')+'</span></td>'
           +'<td class="r">'+fmt(inv)+'€</td><td class="r">'+fmt(d.ventas)+'€</td><td class="r">'+roi+'%</td>'
@@ -1072,7 +1082,7 @@ function renderCrono(){
         +'<summary class="mband" style="background:'+col+'12;border-left:5px solid '+col+'">'
           +'<span class="mchev">▸</span>'
           +'<span class="mes-name" style="color:'+col+';font-size:1.02em">'+label+(cerrado?' <span style="font-size:.6em">🔒</span>':'')+'</span>'
-          +'<span style="font-size:.75em;color:var(--t2)">'+nDir+' directos</span>'
+          +'<span style="font-size:.75em;color:var(--t2)">'+nDir+' directos</span>'+(pedNew?'<span style="background:var(--rel);color:var(--re);font-size:.62em;font-weight:600;padding:2px 8px;border-radius:20px;margin-left:4px">⚠ pedido nuevo · reábrelo para recalcular</span>':'')
           +'<span style="margin-left:auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:.78em"><span>vendido <strong>'+fmt(C.rV)+'€</strong></span><span style="color:var(--g)">limpio <strong>'+fmt(C.limpio)+'€</strong></span><span style="color:var(--ac2)">ROI '+monthRoi+'</span>'+actBtn+'</span>'
         +'</summary>'
         +'<div style="padding:6px 4px">'+fiscLine+mtable+redes+'</div>'
@@ -1246,11 +1256,12 @@ function renderDash(){
   const avgAud=allReal.filter(r=>r.audiencia_media).reduce((s,r,_,a)=>s+r.audiencia_media/a.length,0);
 
   const nd=nextDeadline();
+  var _totInv=0,_totLimp=0;try{var _bmd={};DIRLOG.forEach(function(d){var mk=(d.fecha||'').slice(0,7);(_bmd[mk]=_bmd[mk]||[]).push(d);});Object.keys(_bmd).forEach(function(mk){var _C=calcM(_bmd[mk]);_totInv+=_C.rC;_totLimp+=_C.limpio;});}catch(e){}var _roiG=_totInv>0?Math.round(_totLimp/_totInv*100)+'%':'—';
   document.getElementById('dash-kpis').innerHTML=[
     {l:'Capital actual',v:fmt(capitalReal)+'€',sub:'inicial + beneficio real',c:'var(--g)'},
     {l:'Beneficio bruto (margen)',v:(function(){try{var Q=computeQuarters();var qr=Q.filter(function(q){return q.origen==='cerrado'||q.origen==='manual';});return fmt(qr.reduce(function(a,q){return a+(q.margen||0);},0))+'€';}catch(e){return '—';}})(),sub:'ventas − coste · antes de impuestos',c:'var(--g)'},
     {l:'Próximo plazo fiscal',v:nd?nd.plazo:'—',sub:nd?nd.lbl:'Sin trimestres con datos',c:'var(--ac)'},
-    {l:'Multiplicador medio real',v:avgMult?fmtD(avgMult):'—',sub:'vendido ÷ gastado',c:'var(--g)'},
+    {l:'ROI (después de todo)',v:_roiG,sub:'beneficio limpio ÷ invertido',c:'var(--g)'},
     {l:'Beneficio limpio final',v:(function(){try{var Q=computeQuarters();var qr=Q.filter(function(q){return q.origen==='cerrado'||q.origen==='manual';});return fmt(qr.reduce(function(a,q){return a+(q.rend||0)-(q.p130||0);},0))+'€';}catch(e){return '—';}})(),sub:'tras IVA, autónomos e IRPF (meses cerrados)',c:'var(--g)'},
     {l:'Ventas totales',v:fmt(totalVentasReal)+'€',sub:allReal.length+' registros',c:'var(--g)'},
     {l:'Ventas en directos',v:fmt((typeof DIRLOG!=='undefined'?DIRLOG:[]).reduce((a,d)=>a+(d.ventas||0),0))+'€',sub:`${(typeof DIRLOG!=='undefined'?DIRLOG:[]).length} directos registrados`,c:'var(--g)'},
@@ -1413,7 +1424,7 @@ function renderPedidos(){
     <div class="mfb"><div class="mfb-v" style="color:var(--p)">${fmt(totEnv)}€</div><div class="mfb-l">Envíos Asia + DHL</div></div>
     <div class="mfb"><div class="mfb-v" style="color:var(--ac)">${nTr}</div><div class="mfb-l">En tránsito</div></div>
   </div>`;
-  container.innerHTML=sumHtml+nxtRem+sugHtml+PEDIDOS.map((p,i)=>{
+  var _bmi={};PEDIDOS.forEach(function(p){var mk=pedMes(p);if(!mk)return;_bmi[mk]=(_bmi[mk]||0)+pedImp(p);});var repBox=Object.keys(_bmi).length?'<div class="dash-box" style="margin-bottom:14px"><div class="box-title"><span>📦</span> Envío + aduanas por mes · se reparte entre los directos</div>'+Object.keys(_bmi).sort().reverse().map(function(mk){var n=DIRLOG.filter(function(d){return (d.fecha||'').slice(0,7)===mk;}).length;var per=n?Math.round(_bmi[mk]/n):0;return '<div class="fp-row"><span>'+mLabel(+mk.slice(0,4),+mk.slice(5,7)-1)+' · <strong>'+fmt(_bmi[mk])+'€</strong></span><strong>'+(n?fmt(per)+'€ / directo · '+n+' directos':'sin directos aún')+'</strong></div>';}).join('')+'</div>':'';container.innerHTML=sumHtml+repBox+nxtRem+sugHtml+PEDIDOS.map((p,i)=>{
     const curIdx=steps.indexOf(p.estado);
     const dias=p.fecha_inicio&&p.fecha_llegada?Math.round((new Date(p.fecha_llegada)-new Date(p.fecha_inicio))/(1000*60*60*24)):null;
     const sub=[
@@ -1483,7 +1494,7 @@ function togPed(i){
 
 function newPedido(){
   document.getElementById('np-fecha').value=new Date().toISOString().split('T')[0];
-  document.getElementById('np-importe').value='';
+  document.getElementById('np-importe').value='';var _e=document.getElementById('np-envio');if(_e)_e.value='';var _a=document.getElementById('np-aduana');if(_a)_a.value='';
   document.getElementById('np-paquetes').value='4';
   document.getElementById('np-notas').value='';
   document.getElementById('modal-ped').classList.add('open');
@@ -1497,7 +1508,7 @@ function savePedido(){
   const mes=document.getElementById('np-mes').value;
   const notas=document.getElementById('np-notas').value;
   const mesLabel=mes?MNS[parseInt(mes.split('-')[1])-1]+' '+mes.split('-')[0]:'';
-  PEDIDOS.unshift({id:Date.now(),fecha_inicio:fecha,importe,paquetes,mes_destino:mes,notas,tipo:document.getElementById('np-tipo').value,estado:'comprando',fecha_almacen:'',fecha_envio:'',fecha_llegada:'',coste_import:0});
+  PEDIDOS.unshift({id:Date.now(),fecha_inicio:fecha,importe,paquetes,mes_destino:mes,notas,tipo:document.getElementById('np-tipo').value,estado:'comprando',fecha_almacen:'',fecha_envio:'',fecha_llegada:'',coste_import:parseFloat(document.getElementById('np-aduana').value)||0,envio_asia:parseFloat(document.getElementById('np-envio').value)||0,envio_dhl:0});
   save();closeModal('modal-ped');renderPedidos();
   // Auto-expandir el primero
   setTimeout(()=>togPed(0),50);
@@ -1950,7 +1961,7 @@ function computeQuarters(){
     const margen=ventas-coste,iva=Math.max(0,Math.round(margen*CFG.iva/121));
     const mReal=qM.filter(function(m){return _closed.includes(m)||DIRLOG.some(function(d){return (d.fecha||'').slice(0,7)===m&&(d.ventas||d.stock);});}).length;const cuotas=Math.round(((CFG.reta||0)+(CFG.fijo||0))*(mReal||qd.items.length));
     const gq=fs0.gastos||0;
-    const dua=PEDIDOS.filter(p=>qM.includes(p.mes_destino)).reduce((a,p)=>a+(p.coste_import||0),0);
+    const dua=PEDIDOS.filter(function(p){return qM.includes(pedMes(p));}).reduce(function(a,p){return a+pedImp(p);},0);
     const gfij=GASTOS.reduce((a3,g3)=>a3+(+g3.importe||0),0)*qd.items.length;const gext=GEXTRA.filter(g3=>qM.includes((g3.wid||'').slice(0,7))).reduce((a3,g3)=>a3+(+g3.importe||0),0);const cerrado=qM.some(function(m){return _closed.includes(m);});const comis=DIRLOG.filter(function(d){return qM.includes((d.fecha||'').slice(0,7))&&d.com;}).reduce(function(a,d){return a+Math.round((d.ventas||0)*(CFG.comision||0)/100);},0);const rend=(margen-iva)-cuotas-gq-dua-gfij-gext-comis;
     acum[qd.y]=acum[qd.y]||{rend:0,pag:0};acum[qd.y].rend+=rend;
     const p130=Math.max(0,Math.round(acum[qd.y].rend*0.2-acum[qd.y].pag));acum[qd.y].pag+=p130;
@@ -2150,7 +2161,7 @@ function togHoy(k){const o=hoyDone();const i=o.k.indexOf(k);if(i>=0)o.k.splice(i
 function editObj(){const v=prompt('Objetivo de beneficio de este mes (€):',CFG.objetivo||0);if(v===null)return;CFG.objetivo=Math.max(0,Math.round(parseFloat(v))||0);save();renderDash();if(typeof renderCrono==='function')renderCrono();}
 let _cerrarPending=null;
 function cerrarMes(mesid,rV,rB){const auto=Math.round(CFG.reta||0);const iva=Math.round((rB||0)*0.21);const irpf=Math.round(Math.max(0,(rB||0)-auto)*0.20);const gp=GEXTRA.filter(g=>(g.wid||'').indexOf(mesid)===0).reduce((a,g)=>a+(+g.importe||0),0);const limpio=(rB||0)-auto-irpf-gp;_cerrarPending=mesid;document.getElementById('cerrar-body').innerHTML='Resumen de <strong>'+mesid+'</strong>:<br><br>Ventas reales: <strong>'+fmt(rV)+'€</strong><br>Beneficio (tras IVA): <strong>'+fmt(rB)+'€</strong><br><br><span style="font-size:.85em;color:var(--t3)">A reservar para Hacienda:</span><br>· IVA REBU (303, ~21%): <strong style="color:var(--re)">'+fmt(iva)+'€</strong><br>· Cuota autónomos: <strong style="color:var(--re)">'+fmt(auto)+'€</strong><br>· IRPF (pago 130, ~20%): <strong style="color:var(--re)">'+fmt(irpf)+'€</strong>'+(gp?'<br>· Gastos puntuales: <strong style="color:var(--re)">'+fmt(gp)+'€</strong>':'')+'<br><br><strong style="color:var(--g);font-size:1.2em">Te queda limpio: '+fmt(limpio)+'€</strong><br><br><span style="font-size:.8em;color:var(--t3)">Estimación orientativa; confírmalo con tu gestora.</span>';document.getElementById('modal-cerrar').classList.add('open');}
-function doCerrarMes(){if(!_cerrarPending)return;let c=[];try{c=JSON.parse(LS.get('tcg_closed')||'[]');}catch(e){}if(!c.includes(_cerrarPending))c.push(_cerrarPending);LS.set('tcg_closed',JSON.stringify(c));save();_cerrarPending=null;closeModal('modal-cerrar');renderCrono();if(typeof renderDash==='function')renderDash();}
+function doCerrarMes(){if(!_cerrarPending)return;let c=[];try{c=JSON.parse(LS.get('tcg_closed')||'[]');}catch(e){}if(!c.includes(_cerrarPending))c.push(_cerrarPending);LS.set('tcg_closed',JSON.stringify(c));try{var _sn=JSON.parse(LS.get('tcg_impsnap')||'{}');_sn[_cerrarPending]=importMes(_cerrarPending);LS.set('tcg_impsnap',JSON.stringify(_sn));}catch(e){}save();_cerrarPending=null;closeModal('modal-cerrar');renderCrono();if(typeof renderDash==='function')renderDash();}
 function reabrirMes(mesid){let c=[];try{c=JSON.parse(LS.get('tcg_closed')||'[]');}catch(e){}c=c.filter(x=>x!==mesid);LS.set('tcg_closed',JSON.stringify(c));save();renderCrono();if(typeof renderDash==='function')renderDash();}
 function addNotaW(wid){const t=str('ntw-txt-'+wid);if(!t)return;NOTAS.unshift({id:Date.now(),wid:wid,fecha:todayStr(),txt:t});save();renderCrono();}
 function addGastoW(wid){const c=str('gpw-con-'+wid),i=num('gpw-imp-'+wid);if(!c||!i){alert('Escribe concepto e importe.');return;}GEXTRA.unshift({id:Date.now(),wid:wid,fecha:todayStr(),concepto:c,importe:i});save();renderCrono();if(typeof renderDash==='function')renderDash();}
@@ -2481,7 +2492,7 @@ try{renderHoy();}catch(e){console.error('hoy',e);}
 try{renderGastos();}catch(e){console.error('gastos',e);}
 const firebaseConfig={apiKey:"AIzaSyAqFQ5CRbAl5DaAag42yPHUqI5muk8K_R8",authDomain:"thegirlcardplanner.firebaseapp.com",databaseURL:"https://thegirlcardplanner-default-rtdb.europe-west1.firebasedatabase.app",projectId:"thegirlcardplanner",storageBucket:"thegirlcardplanner.firebasestorage.app",messagingSenderId:"907792812058",appId:"1:907792812058:web:b0cccd85bbe22710ce29a3",measurementId:"G-D44GW1H0N8"};
 let CLOUD_USER=null;
-const CLOUD_KEYS=['tcg_cfg','tcg_meses','tcg_real','tcg_cal','tcg_pedidos','tcg_fiscal','tcg_check','tcg_breaks','tcg_content','tcg_clientes','tcg_inv','tcg_dirlog','tcg_gastos','tcg_gextra','tcg_notas','tcg_pagado','tcg_hucha','tcg_split','tcg_rephist','tcg_closed','tcg_cronohide','tcg_hoydone','tcg_lastbackup'];
+const CLOUD_KEYS=['tcg_cfg','tcg_meses','tcg_real','tcg_cal','tcg_pedidos','tcg_fiscal','tcg_check','tcg_breaks','tcg_content','tcg_clientes','tcg_inv','tcg_dirlog','tcg_gastos','tcg_gextra','tcg_notas','tcg_pagado','tcg_hucha','tcg_split','tcg_rephist','tcg_closed','tcg_impsnap','tcg_cronohide','tcg_hoydone','tcg_lastbackup'];
 function cloudGather(){const o={};CLOUD_KEYS.forEach(function(k){const v=LS.get(k);if(v!=null)o[k]=v;});return o;}
 let _cpT=null;
 window._cloudPushDebounced=function(){if(!CLOUD_USER||typeof firebase==='undefined')return;clearTimeout(_cpT);_cpT=setTimeout(function(){try{firebase.database().ref('users/'+CLOUD_USER.uid).set({data:cloudGather(),updated:Date.now()});}catch(e){}},1200);};
