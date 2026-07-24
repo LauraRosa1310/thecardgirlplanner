@@ -507,7 +507,7 @@ details[open]>.mband .mchev{transform:rotate(90deg)}
     <button class="tab" data-t="check" onclick="sw('check',this)"><span class="ti">✓</span>Checklist</button>
     <button class="tab" data-t="cfg" onclick="sw('cfg',this)"><span class="ti">⚙</span>Config</button>
   </nav>
-  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v91</div>
+  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v95</div>
 </aside>
 <main class="content">
 
@@ -919,7 +919,11 @@ function pedMes(p){return p.mes_destino||(p.fecha_inicio||p.fecha||'').slice(0,7
 function pedImp(p){return (p.envio_asia||0)+(p.envio_dhl||0)+(p.coste_import||0)+(p.aduana||0)+(p.envio||0);}
 function importMes(mk){if(!mk)return 0;return (typeof PEDIDOS!=='undefined'?PEDIDOS:[]).filter(function(p){return pedMes(p)===mk;}).reduce(function(a,p){return a+pedImp(p);},0);}
 function importShare(mk,n){return n>0?Math.round(importMes(mk)/n):0;}
-function calcM(list){var rV=0,rC=0,cm2=0;list.forEach(function(d){rV+=(d.ventas||0);rC+=costeD(d);cm2+=comEur(d);});var _mk=list.length?(list[0].fecha||'').slice(0,7):'';rC+=importMes(_mk);var margen=rV-rC;var iva=Math.max(0,Math.round(margen*(CFG.iva||21)/121));var auto=Math.round(CFG.reta||0);var irpf=Math.round(Math.max(0,margen-iva-auto-cm2)*0.20);return{rV:rV,rC:rC,comisM:cm2,margen:margen,iva:iva,auto:auto,irpf:irpf,limpio:margen-iva-cm2-auto-irpf};}
+function pedEnvio(p){return (p.envio_asia||0)+(p.envio_dhl||0)+(p.envio||0);}
+function pedAduana(p){return (p.coste_import||0)+(p.aduana||0);}
+function envioMes(mk){if(!mk)return 0;return (typeof PEDIDOS!=='undefined'?PEDIDOS:[]).filter(function(p){return pedMes(p)===mk;}).reduce(function(a,p){return a+pedEnvio(p);},0);}
+function aduanaMes(mk){if(!mk)return 0;return (typeof PEDIDOS!=='undefined'?PEDIDOS:[]).filter(function(p){return pedMes(p)===mk;}).reduce(function(a,p){return a+pedAduana(p);},0);}
+function calcM(list){var rV=0,rC=0,cm2=0;list.forEach(function(d){rV+=(d.ventas||0);rC+=costeD(d);cm2+=comEur(d);});var _mk=list.length?(list[0].fecha||'').slice(0,7):'';rC+=envioMes(_mk);var _adu=aduanaMes(_mk);var margen=rV-rC;var iva=Math.max(0,Math.round(margen*(CFG.iva||21)/121));var auto=Math.round(CFG.reta||0);var irpf=Math.round(Math.max(0,margen-iva-auto-cm2-_adu)*0.20);return{rV:rV,rC:rC,comisM:cm2,margen:margen,iva:iva,auto:auto,irpf:irpf,aduana:_adu,limpio:margen-iva-cm2-auto-_adu-irpf};}
 function regChartSVG(md){
   if(!md.length)return '';
   var maxV=1;md.forEach(function(x){maxV=Math.max(maxV,x.vendido,x.limpio);});
@@ -1028,10 +1032,20 @@ function renderCrono(){
   var tipoRows=Object.keys(byT).map(function(t){var o=byT[t];var col=TCOL[t]||'#6b6b63';return '<div class="fp-row"><span><span style="color:'+col+';font-weight:700">'+esc(t)+'</span> · '+o.n+' reg · vendido '+fmt(o.v)+'€ · margen '+fmt(o.v-o.c)+'€</span><strong>'+(o.c>0?Math.round((o.v-o.c)/o.c*100)+'%':'—')+'</strong></div>';}).join('');
   var byDay={};DIRLOG.forEach(function(d){if(d.fecha&&d.ventas){var wd=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][new Date(d.fecha+'T12:00').getDay()];(byDay[wd]=byDay[wd]||[]).push(d.ventas);}});
   var bestDay=Object.keys(byDay).map(function(k){var a=byDay[k];return{k:k,avg:a.reduce(function(x,y){return x+y;},0)/a.length};}).sort(function(a,b){return b.avg-a.avg;})[0];
+  var rankDir=DIRLOG.filter(function(d){return d.tipo!=='Venta directa'&&d.ventas&&costeD(d);}).map(function(d){var inv=costeD(d);return{d:d,roi:Math.round((d.ventas-inv)/inv*100),benef:d.ventas-inv};}).sort(function(a,b){return b.roi-a.roi;}).slice(0,5);
+  var rankRows=rankDir.map(function(r,i){var rc=TCOL[r.d.tipo]||'#6b6b63';return '<div class="fp-row"><span>'+(i+1)+'. <span style="color:'+rc+';font-weight:600">'+esc(r.d.tipo)+'</span> · '+(r.d.fecha||'')+'</span><strong style="color:var(--g)">ROI '+r.roi+'% · +'+fmt(r.benef)+'€</strong></div>';}).join('');
+  var rankingBlock=rankRows?'<div class="mfb-head" style="margin-top:14px;margin-bottom:6px">🏆 Top directos por ROI</div>'+rankRows:'';
+  var bestMonth=md.slice().sort(function(a,b){return b.limpio-a.limpio;})[0];
+  var bestMonthBlock=(bestMonth&&md.length>1)?'<div style="margin-top:9px;font-size:.76em;color:var(--t2)">🗓 Tu mejor mes: <strong>'+bestMonth.label+'</strong> · limpio <strong style="color:var(--g)">'+fmt(bestMonth.limpio)+'€</strong></div>':'';
+  var _nf={yt:null,ig:null},_nl={yt:0,ig:0};
+  DIRLOG.slice().sort(function(a,b){return (a.fecha||'')<(b.fecha||'')?-1:1;}).forEach(function(d){if(d.yt_subs){if(_nf.yt==null)_nf.yt=d.yt_subs;_nl.yt=d.yt_subs;}if(d.ig_subs){if(_nf.ig==null)_nf.ig=d.ig_subs;_nl.ig=d.ig_subs;}});
+  var _ytG=_nf.yt!=null?_nl.yt-_nf.yt:null,_igG=_nf.ig!=null?_nl.ig-_nf.ig:null;
+  var rnet=function(v,g,lbl,c){return '<div style="text-align:center;padding:9px;background:var(--s2);border:1px solid var(--bd);border-radius:9px"><div style="font-size:1.25em;font-weight:600;color:'+c+'">'+fmt(v)+'</div><div style="font-size:.58em;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">'+lbl+'</div><div style="font-size:.64em;color:'+(g>=0?'var(--g)':'var(--re)')+'">'+(g>=0?'+':'')+fmt(g)+' desde el inicio</div></div>';};
+  var redesBlock=(_nf.yt!=null||_nf.ig!=null)?'<div class="mfb-head" style="margin-top:14px;margin-bottom:6px">📱 Redes</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px">'+(_nf.yt!=null?rnet(_nl.yt,_ytG,'YouTube','#d24a4a'):'')+(_nf.ig!=null?rnet(_nl.ig,_igG,'Instagram','#8b5cf6'):'')+'</div>':'';
   var analisis=md.length?'<details class="dash-box" style="margin-bottom:18px"><summary style="cursor:pointer;font-weight:700;font-size:.92em;list-style:none">📊 Evolución y análisis</summary><div style="margin-top:12px">'
    +regChartSVG(md)+'<div style="font-size:.64em;color:var(--t3);text-align:center;margin-top:2px"><span style="color:#c9b27a">■</span> vendido · <span style="color:#2f9e6f">■</span> beneficio limpio</div>'
    +'<div class="mfb-head" style="margin-top:14px;margin-bottom:6px">Rentabilidad por tipo · ROI medio (bruto)</div>'+(tipoRows||'<div style="font-size:.72em;color:var(--t3)">Sin datos.</div>')
-   +(bestDay?'<div style="margin-top:11px;padding:9px 12px;background:var(--acl,#f6efe0);border:1px solid var(--bd);border-radius:9px;font-size:.76em;color:var(--t2)">📅 Tu mejor día es <strong>'+bestDay.k+'</strong> — media de <strong>'+fmt(bestDay.avg)+'€</strong> por directo</div>':'')
+   +(bestDay?'<div style="margin-top:11px;padding:9px 12px;background:var(--acl,#f6efe0);border:1px solid var(--bd);border-radius:9px;font-size:.76em;color:var(--t2)">📅 Tu mejor día es <strong>'+bestDay.k+'</strong> — media de <strong>'+fmt(bestDay.avg)+'€</strong> por directo</div>':'')+rankingBlock+bestMonthBlock+redesBlock
    +'</div></details>':'';
 
   // ── LISTADO ──
@@ -1076,7 +1090,8 @@ function renderCrono(){
           +'<td class="r" style="white-space:nowrap"><span onclick="editReg('+d.id+')" style="cursor:pointer;color:var(--t3)" title="Editar">✎</span> <span onclick="delReg('+d.id+')" style="cursor:pointer;color:var(--re)" title="Eliminar">×</span></td></tr>';
       }).join('');
       var monthRoi=C.rC>0?Math.round(C.limpio/C.rC*100)+'%':'—';
-      var fiscLine='<div style="padding:9px 13px;background:var(--s2);border-radius:9px;font-size:.72em;color:var(--t2);line-height:1.8;margin-top:6px">Margen <strong>'+fmt(C.margen)+'€</strong> · IVA REBU <strong style="color:var(--re)">−'+fmt(C.iva)+'€</strong>'+(C.comisM?' · Comisión <strong style="color:var(--re)">−'+fmt(C.comisM)+'€</strong>':'')+' · Autónomos <strong style="color:var(--re)">−'+fmt(C.auto)+'€</strong> · IRPF <strong style="color:var(--re)">−'+fmt(C.irpf)+'€</strong> → <strong style="color:var(--g)">Limpio '+fmt(C.limpio)+'€</strong></div>';
+      var _env=envioMes(mk);var _adu=C.aduana||0;var _cromos=C.rC-_env;
+      var fiscLine='<div style="padding:9px 13px;background:var(--s2);border-radius:9px;font-size:.72em;color:var(--t2);line-height:1.8;margin-top:6px">Vendido <strong>'+fmt(C.rV)+'€</strong> · Cromos <strong style="color:var(--re)">−'+fmt(_cromos)+'€</strong>'+(_env?' · Envío <strong style="color:var(--re)">−'+fmt(_env)+'€</strong>':'')+' → Margen <strong>'+fmt(C.margen)+'€</strong> · IVA REBU <strong style="color:var(--re)">−'+fmt(C.iva)+'€</strong>'+(C.comisM?' · Comisión <strong style="color:var(--re)">−'+fmt(C.comisM)+'€</strong>':'')+' · Autónomos <strong style="color:var(--re)">−'+fmt(C.auto)+'€</strong>'+(_adu?' · Aduanas/DHL <strong style="color:var(--re)">−'+fmt(_adu)+'€</strong>':'')+' · IRPF <strong style="color:var(--re)">−'+fmt(C.irpf)+'€</strong> → <strong style="color:var(--g)">Limpio '+fmt(C.limpio)+'€</strong></div>';
       var mtable='<table class="mtable"><thead><tr><th>Fecha</th><th>Tipo</th><th class="r">Invertido</th><th class="r">Recibido</th><th class="r">ROI</th><th class="r">Beneficio</th><th></th></tr></thead><tbody>'+trows+'</tbody></table>';
       var actBtn=cerrado?'<button class="btn-sm" onclick="event.preventDefault();event.stopPropagation();reabrirMes(\''+mk+'\')">Reabrir</button>':'<button class="btn-sm primary" onclick="event.preventDefault();event.stopPropagation();cerrarMes(\''+mk+'\','+C.rV+','+(C.margen-C.iva)+')">🔒 Cerrar</button>';
       body+='<details class="mes-sec" id="mes-'+mk+'"'+(cerrado?'':' open')+'>'
@@ -1213,15 +1228,6 @@ function renderSalud(){
    +'<div style="font-size:.74em;color:var(--t2);margin-top:12px;line-height:1.7">💰 Saldo disponible estimado: <strong>'+fmt(s.saldo)+'€</strong> · tras Hacienda: <strong>'+fmt(s.disponible)+'€</strong>'
      +(s.stockSV?' · 📦 Stock sin vender: <strong>'+fmt(s.stockSV)+'€</strong>':'')
      +(s.stock90?' · 🕒 Stock &gt;90 días: <strong style="color:var(--re)">'+fmt(s.stock90)+'€</strong>':'')+'</div>'
-   +'<div style="margin-top:12px;padding:11px 13px;background:var(--s2);border:1px solid var(--bd);border-radius:10px">'
-     +'<div style="font-size:.72em;font-weight:700;color:var(--t2);margin-bottom:7px">🧮 Simulador de pedido — ¿me lo puedo permitir?</div>'
-     +'<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><input type="number" id="sim-imp" placeholder="importe del pedido €" style="flex:1;min-width:140px;'+inp+'" onkeydown="if(event.key===\'Enter\')simPedido()"><button class="btn-sm primary" onclick="simPedido()">Comprobar</button></div>'
-     +'<div id="sim-out" style="font-size:.76em;margin-top:9px;color:var(--t3)">Escribe cuánto te quieres gastar y te digo si entra en tu reinversión.</div>'
-   +'</div>'
-   +'<div style="margin-top:12px;padding:11px 13px;background:var(--s2);border:1px solid var(--bd);border-radius:10px">'
-     +'<div style="font-size:.72em;font-weight:700;color:var(--t2);margin-bottom:7px">⚡ Registro rápido de directo</div>'
-     +'<div style="display:flex;gap:8px;flex-wrap:wrap"><input type="number" id="qd-cartas" placeholder="nº cartas" style="flex:1;min-width:88px;'+inp+'"><input type="number" id="qd-gast" placeholder="gastado €" style="flex:1;min-width:88px;'+inp+'"><input type="number" id="qd-vend" placeholder="vendido €" style="flex:1;min-width:88px;'+inp+'"><button class="btn-sm primary" onclick="addDirQuick()">+ Guardar</button></div>'
-   +'</div>'
    +'<div style="margin-top:10px;text-align:right"><button class="btn-sm" onclick="exportData()">⬇ Backup JSON</button></div>'
   +'</div>';
 }
@@ -1738,19 +1744,22 @@ function renderFiscal(){
     let tV=0,tC=0,tMg=0,tIva=0,tRe=0,t130=0;
     Q.forEach(q=>{tV+=q.ventas;tC+=q.coste;tMg+=q.margen;tIva+=q.iva;tRe+=q.rend;t130+=q.p130;});
     const mdRow=(lbl,v3,c3,col3,pre3,mk3)=>{
-      const mg3=v3-c3,iva3=Math.round(mg3*CFG.iva/121);
+      const env3=mk3?envioMes(mk3):0,adu3=mk3?aduanaMes(mk3):0;
+      const mg3=v3-c3-env3,iva3=Math.round(mg3*CFG.iva/121);
       const auto3=Math.round(CFG.reta||0);
       const com3=mk3?DIRLOG.filter(function(d){return (d.fecha||'').slice(0,7)===mk3&&d.com;}).reduce(function(a,d){return a+Math.round((d.ventas||0)*(CFG.comision||0)/100);},0):0;
-      const irpf3=Math.round(Math.max(0,mg3-iva3-auto3-com3)*0.20),neto3=mg3-iva3-com3-auto3-irpf3;
+      const irpf3=Math.round(Math.max(0,mg3-iva3-auto3-com3-adu3)*0.20),neto3=mg3-iva3-com3-auto3-adu3-irpf3;
       const li=(k,v,c)=>`<div style="display:flex;justify-content:space-between;gap:8px;font-size:.7em;padding:3px 0"><span style="color:#9aa2ad">${k}</span><span style="color:${c||'#e8eaed'};font-weight:500;font-feature-settings:'tnum' 1">${v}</span></div>`;
       return `<div style="margin-top:8px;border-top:1px solid #374151;padding-top:6px">
         <div style="font-size:.6em;color:#9aa2ad;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">${lbl}</div>
         ${li('Ventas',pre3+fmt(v3)+'€')}
-        ${li('Coste',pre3+'−'+fmt(c3)+'€')}
+        ${li('Coste cromos',pre3+'−'+fmt(c3)+'€')}
+        ${env3?li('Envío','−'+fmt(env3)+'€','#f0a3a3'):''}
         ${li('Margen',pre3+fmt(mg3)+'€',col3)}
         ${li('IVA REBU','−'+fmt(iva3)+'€','#f0a3a3')}
         ${com3?li('Comisión','−'+fmt(com3)+'€','#f0a3a3'):''}
         ${li('Autónomos','−'+fmt(auto3)+'€','#f0a3a3')}
+        ${adu3?li('Aduanas/DHL','−'+fmt(adu3)+'€','#f0a3a3'):''}
         ${li('IRPF (130)','−'+fmt(irpf3)+'€','#f0a3a3')}
         <div style="display:flex;justify-content:space-between;gap:8px;font-size:.76em;padding:5px 0 1px;border-top:1px solid #374151;margin-top:3px"><span style="color:#cdd3db;font-weight:500">Limpio</span><span style="color:#34d399;font-weight:600;font-feature-settings:'tnum' 1">${pre3}${fmt(neto3)}€</span></div>
       </div>`;};
@@ -1959,14 +1968,14 @@ function computeQuarters(){
     const hu=HUCHA.filter(h=>qM.includes(h.mes||(h.fecha||'').slice(0,7)));
     const hV=hu.reduce((a2,h)=>a2+(h.ventas||0),0),hC=hu.reduce((a2,h)=>a2+(h.coste||0),0);
     const ventas=manual?(fs0.oV||0):(nR>0?rV:(hV>0?hV:eV)),coste=manual?(fs0.oC||0):(nR>0?rC:(hV>0?hC:eC));
-    const margen=ventas-coste,iva=Math.max(0,Math.round(margen*CFG.iva/121));
+    const envioQ=qM.reduce(function(a,m){return a+envioMes(m);},0);const margen=(ventas-coste-envioQ),iva=Math.max(0,Math.round((ventas-coste-envioQ)*CFG.iva/121));
     const mReal=qM.filter(function(m){return _closed.includes(m)||DIRLOG.some(function(d){return (d.fecha||'').slice(0,7)===m&&(d.ventas||d.stock);});}).length;const cuotas=Math.round(((CFG.reta||0)+(CFG.fijo||0))*(mReal||qd.items.length));
     const gq=fs0.gastos||0;
-    const dua=PEDIDOS.filter(function(p){return qM.includes(pedMes(p));}).reduce(function(a,p){return a+pedImp(p);},0);
+    const dua=qM.reduce(function(a,m){return a+aduanaMes(m);},0);
     const gfij=GASTOS.reduce((a3,g3)=>a3+(+g3.importe||0),0)*qd.items.length;const gext=GEXTRA.filter(g3=>qM.includes((g3.wid||'').slice(0,7))).reduce((a3,g3)=>a3+(+g3.importe||0),0);const cerrado=qM.some(function(m){return _closed.includes(m);});const comis=DIRLOG.filter(function(d){return qM.includes((d.fecha||'').slice(0,7))&&d.com;}).reduce(function(a,d){return a+Math.round((d.ventas||0)*(CFG.comision||0)/100);},0);const rend=(margen-iva)-cuotas-gq-dua-gfij-gext-comis;
     acum[qd.y]=acum[qd.y]||{rend:0,pag:0};acum[qd.y].rend+=rend;
     const p130=Math.max(0,Math.round(acum[qd.y].rend*0.2-acum[qd.y].pag));acum[qd.y].pag+=p130;
-    out.push({key:qd.key,lbl:qd.y+' T'+qd.q,origen:manual?'manual':(cerrado?'cerrado':(nR>0?'real':(hV>0?'cierres':'estimado'))),ventas,coste,margen,iva,cuotas,gq,dua,gastos:gq+gfij+gext,cerrado,rend,p130,p303:!!fs0.p303,p130p:!!fs0.p130,plazo:plazo303(qd.y,qd.q)});
+    out.push({key:qd.key,lbl:qd.y+' T'+qd.q,origen:manual?'manual':(cerrado?'cerrado':(nR>0?'real':(hV>0?'cierres':'estimado'))),ventas,coste:coste+envioQ,margen,iva,cuotas,gq,dua,gastos:gq+gfij+gext,cerrado,rend,p130,p303:!!fs0.p303,p130p:!!fs0.p130,plazo:plazo303(qd.y,qd.q)});
   });
   return out;
 }
@@ -2147,11 +2156,6 @@ function renderHoy(){
     <div style="font-size:.66em;color:var(--t3);margin-top:8px">🎥 directo · 🎲 break · 📦 compra CH · ✏️ contenido · ☑ tarea. Se llena desde Calendario, Contenido y Checklist.</div>
   </div>`;
   el.innerHTML=`
-  <div class="hero-inicio">
-    <div class="hero-day">${DOWS[t.getDay()]}, ${t.getDate()} de ${MNS[t.getMonth()].toLowerCase()}</div>
-    <div class="hero-h1">${_saludo}</div>
-    ${heroObj}
-  </div>
   ${avisosHtml}
   ${t.getMonth()%3===2?`<div class="alert alert-warn" style="margin-bottom:14px">⚖ Último mes del trimestre — a partir de ahora mantén <strong>líquida</strong> la reserva para Hacienda, no la reinviertas.${nd0?' Próximo plazo: '+nd0.plazo+'.':''}</div>`:''}
   ${qcHtml}${breakHtml}${der.length?`<div class="dash-box" style="margin-bottom:16px"><div class="box-title"><span>⚡</span> Tareas de hoy — generadas de tu plan</div>${der.map(x=>{const _k=btoa(unescape(encodeURIComponent(x))).slice(0,16);const _dn=_hoyK.includes(_k);return `<div class="fp-row" onclick="togHoy('${_k}')" style="cursor:pointer"><span style="${_dn?'text-decoration:line-through;opacity:.55':''}">${_dn?'☑':'☐'} ${x}</span></div>`;}).join('')}</div>`:''}${agendaHtml}`;
