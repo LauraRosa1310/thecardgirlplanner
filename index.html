@@ -492,7 +492,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ac)!impo
     <button class="tab" data-t="check" onclick="sw('check',this)"><span class="ti">✓</span>Checklist</button>
     <button class="tab" data-t="cfg" onclick="sw('cfg',this)"><span class="ti">⚙</span>Config</button>
   </nav>
-  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v82</div>
+  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v83</div>
 </aside>
 <main class="content">
 
@@ -886,14 +886,14 @@ function buildWeeks(mc,isEnero,idx){
 }
 
 // ══ RENDER CRONOGRAMA ══
-var __editId=null;var _fltY='',_fltM='';
+var __editId=null;var _fltY='',_fltM='',_fltTipo='',_fltText='',_showForm=false;
 var MPAL=['#4f46e5','#0e7490','#059669','#b45309','#7c3aed','#be185d','#0369a1','#c2410c','#15803d','#a21caf','#1d4ed8','#b91c1c'];
+var TCOL={'Break':'#c2760f','Subasta':'#8b5cf6','Mixto':'#14b8a6','Venta directa':'#3b82f6'};
 function ensureMonths(){
   var have={};MESES.forEach(function(m){have[mid(m.y,m.m)]=1;});
   DIRLOG.forEach(function(d){var mk=(d.fecha||'').slice(0,7);if(mk&&!have[mk]){var y=+mk.slice(0,4),m=+mk.slice(5,7)-1;MESES.push({y:y,m:m,ds:0,vd:0,br:0,pq:0,vp:0,fixed:false,cls:'extra',label:mLabel(y,m)});have[mk]=1;}});
   MESES.sort(function(a,b){return a.y!==b.y?a.y-b.y:a.m-b.m;});
 }
-var TCOL={'Break':'#c2760f','Subasta':'#8b5cf6','Mixto':'#14b8a6','Venta directa':'#3b82f6'};
 function comEur(d){return (d&&d.com)?Math.round((d.ventas||0)*(CFG.comision||0)/100):0;}
 function calcM(list){var rV=0,rC=0,cm2=0;list.forEach(function(d){rV+=(d.ventas||0);rC+=(d.stock||0);cm2+=comEur(d);});var margen=rV-rC;var iva=Math.max(0,Math.round(margen*(CFG.iva||21)/121));var auto=Math.round(CFG.reta||0);var irpf=Math.round(Math.max(0,margen-iva-auto-cm2)*0.20);return{rV:rV,rC:rC,comisM:cm2,margen:margen,iva:iva,auto:auto,irpf:irpf,limpio:margen-iva-cm2-auto-irpf};}
 function regChartSVG(md){
@@ -910,9 +910,19 @@ function regChartSVG(md){
   });
   return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;max-width:'+W+'px;height:auto">'+bars+'</svg>';
 }
+function entryCard(d){
+  var c2=TCOL[d.tipo]||'#6b6b63';var mult=(d.ventas&&d.stock)?' <span style="color:var(--t3)">('+fmtD(d.ventas/d.stock)+')</span>':'';
+  var ce=comEur(d);var badge='<span style="background:'+c2+'1e;color:'+c2+';font-weight:700;font-size:.66em;padding:2px 9px;border-radius:20px;white-space:nowrap">'+esc(d.tipo||'—')+'</span>';
+  return '<div style="background:var(--s1);border:1px solid var(--bd);border-radius:10px;padding:10px 13px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;box-shadow:var(--sh)">'
+    +'<div style="line-height:1.65;font-size:.82em">'+badge+' <span style="color:var(--t3)">'+(d.fecha||'')+'</span> · '+(d.cartas?d.cartas+' cartas · ':'')+'gastó '+fmt(d.stock)+'€ → <strong>'+fmt(d.ventas)+'€</strong>'+mult+(ce?' · <span style="color:var(--re)">−'+fmt(ce)+'€ com.</span>':'')+(d.aud?' · 👥'+d.aud:'')+(d.notas?'<br><span style="color:var(--t3)">📝 '+esc(d.notas)+'</span>':'')+'</div>'
+    +'<span style="white-space:nowrap;display:flex;gap:4px"><button class="btn-sm" onclick="editReg('+d.id+')">✎</button><button class="btn-sm danger" onclick="delReg('+d.id+')">×</button></span></div>';
+}
+function toggleRegForm(){_showForm=!_showForm;var f=document.getElementById('reg-form');if(f)f.style.display=_showForm?'block':'none';var b=document.getElementById('reg-addbtn');if(b)b.textContent=_showForm?'× Cerrar formulario':'+ Añadir directo / break';}
 function editReg(id){
   var d=DIRLOG.find(function(x){return x.id===id;});if(!d)return;
-  __editId=id;
+  __editId=id;_showForm=true;
+  var f=document.getElementById('reg-form');if(f)f.style.display='block';
+  var ab=document.getElementById('reg-addbtn');if(ab)ab.textContent='× Cerrar formulario';
   var st=function(i,v){var e=document.getElementById(i);if(e)e.value=(v==null?'':v);};
   st('rg-fecha',d.fecha);st('rg-cartas',d.cartas);st('rg-gast',d.stock);st('rg-vend',d.ventas);st('rg-aud',d.aud);
   st('rg-pico',d.pico);st('rg-val',d.valoracion);st('rg-pct',d.pct_directo);st('rg-yt',d.yt_subs);st('rg-ig',d.ig_subs);st('rg-notas',d.notas);
@@ -920,12 +930,13 @@ function editReg(id){
   var cb=document.getElementById('rg-com');if(cb)cb.checked=!!d.com;
   var bt=document.getElementById('rg-save');if(bt)bt.textContent='✓ Guardar cambios';
   var bn=document.getElementById('rg-editing');if(bn){bn.style.display='block';bn.innerHTML='✎ Editando el registro del '+(d.fecha||'')+' · <span style="cursor:pointer;text-decoration:underline" onclick="cancelEdit()">cancelar</span>';}
-  var dt=document.querySelector('.mas-detalles-reg');
   window.scrollTo({top:0,behavior:'smooth'});
 }
 function cancelEdit(){__editId=null;renderCrono();}
-function setFlt(){var y=document.getElementById('flt-y'),m=document.getElementById('flt-m');_fltY=y?y.value:'';_fltM=m?m.value:'';renderCrono();}
-function clearFlt(){_fltY='';_fltM='';renderCrono();}
+function setFlt(){var y=document.getElementById('flt-y'),m=document.getElementById('flt-m'),t=document.getElementById('flt-tipo');_fltY=y?y.value:'';_fltM=m?m.value:'';_fltTipo=t?t.value:'';renderCrono();}
+function setFltText(v){_fltText=v;renderCrono();var e=document.getElementById('flt-txt');if(e){e.focus();var L=e.value.length;try{e.setSelectionRange(L,L);}catch(_){}}}
+function clearFlt(){_fltY='';_fltM='';_fltTipo='';_fltText='';renderCrono();}
+function goMonth(mk){_fltText='';_fltTipo='';renderCrono();setTimeout(function(){scrollToMes(mk);},30);}
 function addReg(){
   var f=str('rg-fecha');if(!f){alert('Pon la fecha.');return;}
   var cb=document.getElementById('rg-com');
@@ -943,10 +954,22 @@ function renderCrono(){
   var _closed=(function(){try{return JSON.parse(LS.get('tcg_closed')||'[]');}catch(e){return[];}})();
   var byM={};DIRLOG.forEach(function(d){var mk=(d.fecha||'').slice(0,7);if(!mk)return;(byM[mk]=byM[mk]||[]).push(d);});
   var months=Object.keys(byM).sort().reverse();
-  var shown=months.filter(function(mk){return (!_fltY||_fltY===mk.slice(0,4))&&(!_fltM||_fltM===mk.slice(5,7));});
   var inp='padding:8px 10px;border:1px solid var(--bd);border-radius:8px;font-family:inherit;font-size:.9em;width:100%';
+  var selS=inp+';width:auto';
   var fld=function(lbl,id,ph){return '<div class="cf"><label>'+lbl+'</label><input type="number" id="'+id+'" placeholder="'+ph+'" style="'+inp+'"></div>';};
-  var form='<div class="dash-box" style="margin-bottom:18px"><div class="box-title"><span>➕</span> Registrar lo que ha pasado</div>'
+
+  // ── DASHBOARD DE ESTADÍSTICAS ──
+  var totDir=0,totG=0,totV=0,totL=0;
+  months.forEach(function(mk){var C=calcM(byM[mk]);totG+=C.rC;totV+=C.rV;totL+=C.limpio;byM[mk].forEach(function(d){if(d.tipo!=='Venta directa')totDir++;});});
+  var scard=function(l,v,c){return '<div style="background:var(--s1);border:1px solid var(--bd);border-radius:14px;padding:15px 18px;box-shadow:var(--sh)"><div style="font-size:.72em;color:var(--t3);margin-bottom:4px">'+l+'</div><div style="font-size:1.65em;font-weight:800;color:'+(c||'var(--t1)')+'">'+v+'</div></div>';};
+  var statCards='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:18px">'
+    +scard('Directos',totDir,'var(--t1)')+scard('Gastado',fmt(totG)+'€','var(--t1)')+scard('Vendido',fmt(totV)+'€','var(--ac2,#a9781f)')+scard('Beneficio limpio',fmt(totL)+'€','var(--g)')
+    +'</div>';
+
+  // ── AÑADIR + FORM (oculto) ──
+  var showF=(_showForm||__editId);
+  var addBtn='<button class="btn-save" id="reg-addbtn" style="margin-bottom:14px" onclick="toggleRegForm()">'+(showF?'× Cerrar formulario':'+ Añadir directo / break')+'</button>';
+  var form='<div id="reg-form" style="display:'+(showF?'block':'none')+'"><div class="dash-box" style="margin-bottom:18px"><div class="box-title"><span>➕</span> Registrar lo que ha pasado</div>'
    +'<div id="rg-editing" style="display:none;font-size:.74em;color:var(--ac2,#a9781f);background:var(--acl,#f6efe0);border:1px solid var(--bd);border-radius:8px;padding:7px 11px;margin-bottom:10px"></div>'
    +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:9px">'
    +'<div class="cf"><label>Fecha</label><input type="date" id="rg-fecha" value="'+todayStr()+'" style="'+inp+'"></div>'
@@ -959,84 +982,87 @@ function renderCrono(){
    +fld('Pico audiencia','rg-pico','78')+fld('Valoración /5','rg-val','4')+fld('% vendido directo','rg-pct','85')+fld('Subs YouTube','rg-yt','120')+fld('Seguidores IG','rg-ig','340')
    +'</div></details>'
    +'<div class="cf" style="margin-top:10px"><label>Notas (opcional)</label><input type="text" id="rg-notas" placeholder="qué funcionó, mejores cartas…" style="'+inp+'"></div>'
-   +'<button class="btn-save" id="rg-save" style="margin-top:12px" onclick="addReg()">+ Guardar registro</button></div>';
+   +'<button class="btn-save" id="rg-save" style="margin-top:12px" onclick="addReg()">+ Guardar registro</button></div></div>';
 
-  // objetivo mes actual
-  var curMk=mid(new Date().getFullYear(),new Date().getMonth());
-  var objE=CFG.objetivo||0;var curLimpio=byM[curMk]?calcM(byM[curMk]).limpio:0;
-  var curLabel=mLabel(+curMk.slice(0,4),+curMk.slice(5,7)-1);
-  var pctO=objE?Math.min(100,Math.round(curLimpio/objE*100)):0;
-  var objBox='<div class="dash-box" style="margin-bottom:18px"><div class="box-title"><span>🎯</span> Objetivo de '+curLabel+'</div>'
-   +(objE?'<div style="font-size:.82em;color:var(--t2);margin-bottom:8px">Llevas <strong style="color:var(--g)">'+fmt(curLimpio)+'€</strong> limpios de <strong>'+fmt(objE)+'€</strong> · <strong>'+pctO+'%</strong></div><div class="prog-bar"><div class="prog-fill" style="width:'+pctO+'%;background:'+(pctO>=100?'var(--g)':'var(--ac)')+'"></div></div><div style="margin-top:9px"><button class="btn-sm" onclick="editObj()">Cambiar objetivo</button></div>'
-     :'<div style="font-size:.8em;color:var(--t3)">Pon un objetivo de beneficio para este mes y sigue tu progreso. <button class="btn-sm primary" onclick="editObj()">Poner objetivo</button></div>')
-   +'</div>';
+  // ── BUSCADOR + FILTROS ──
+  var _yrs=[];months.forEach(function(mk){var y=mk.slice(0,4);if(_yrs.indexOf(y)<0)_yrs.push(y);});_yrs.sort();
+  var filterBar='<div class="dash-box" style="margin-bottom:18px;padding:14px 16px">'
+   +'<input type="text" id="flt-txt" value="'+esc(_fltText)+'" oninput="setFltText(this.value)" placeholder="🔎 Buscar por tipo, fecha o nota…" style="'+inp+'">'
+   +'<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;align-items:center">'
+     +'<select id="flt-tipo" onchange="setFlt()" style="'+selS+'"><option value="">Todos los tipos</option>'+['Break','Subasta','Mixto','Venta directa'].map(function(t){return '<option'+(_fltTipo===t?' selected':'')+'>'+t+'</option>';}).join('')+'</select>'
+     +'<select id="flt-y" onchange="setFlt()" style="'+selS+'"><option value="">Todos los años</option>'+_yrs.map(function(y){return '<option value="'+y+'"'+(_fltY===y?' selected':'')+'>'+y+'</option>';}).join('')+'</select>'
+     +'<select id="flt-m" onchange="setFlt()" style="'+selS+'"><option value="">Todos los meses</option>'+MNS.map(function(nm,i){return '<option value="'+pad(i+1)+'"'+(_fltM===pad(i+1)?' selected':'')+'>'+nm+'</option>';}).join('')+'</select>'
+     +((_fltY||_fltM||_fltTipo||_fltText)?'<button class="btn-sm" onclick="clearFlt()">Quitar filtros</button>':'')
+   +'</div></div>';
 
-  // análisis: gráfica + tipo + mejor día
+  // ── ANÁLISIS (colapsable) ──
   var mAsc=Object.keys(byM).sort().slice(-12);
   var md=mAsc.map(function(mk){var y=+mk.slice(0,4),m=+mk.slice(5,7)-1;var c=calcM(byM[mk]);return{label:mLabel(y,m),short:MNS[m].slice(0,3),vendido:c.rV,limpio:c.limpio};});
   var byT={};DIRLOG.forEach(function(d){var t=d.tipo||'—';var o=byT[t]=byT[t]||{n:0,v:0,c:0,ms:0,mn:0};o.n++;o.v+=d.ventas||0;o.c+=d.stock||0;if(d.ventas&&d.stock){o.ms+=d.ventas/d.stock;o.mn++;}});
   var tipoRows=Object.keys(byT).map(function(t){var o=byT[t];var col=TCOL[t]||'#6b6b63';return '<div class="fp-row"><span><span style="color:'+col+';font-weight:700">'+esc(t)+'</span> · '+o.n+' reg · vendido '+fmt(o.v)+'€ · margen '+fmt(o.v-o.c)+'€</span><strong>'+(o.mn?fmtD(o.ms/o.mn):'—')+'</strong></div>';}).join('');
   var byDay={};DIRLOG.forEach(function(d){if(d.fecha&&d.ventas){var wd=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][new Date(d.fecha+'T12:00').getDay()];(byDay[wd]=byDay[wd]||[]).push(d.ventas);}});
   var bestDay=Object.keys(byDay).map(function(k){var a=byDay[k];return{k:k,avg:a.reduce(function(x,y){return x+y;},0)/a.length};}).sort(function(a,b){return b.avg-a.avg;})[0];
-  var analisis=md.length?'<details class="dash-box" style="margin-bottom:18px" open><summary style="cursor:pointer;font-weight:700;font-size:.92em;list-style:none">📊 Evolución y análisis</summary><div style="margin-top:12px">'
+  var analisis=md.length?'<details class="dash-box" style="margin-bottom:18px"><summary style="cursor:pointer;font-weight:700;font-size:.92em;list-style:none">📊 Evolución y análisis</summary><div style="margin-top:12px">'
    +regChartSVG(md)+'<div style="font-size:.64em;color:var(--t3);text-align:center;margin-top:2px"><span style="color:#c9b27a">■</span> vendido · <span style="color:#2f9e6f">■</span> beneficio limpio</div>'
    +'<div class="mfb-head" style="margin-top:14px;margin-bottom:6px">Rentabilidad por tipo · multiplicador medio</div>'+(tipoRows||'<div style="font-size:.72em;color:var(--t3)">Sin datos.</div>')
    +(bestDay?'<div style="margin-top:11px;padding:9px 12px;background:var(--acl,#f6efe0);border:1px solid var(--bd);border-radius:9px;font-size:.76em;color:var(--t2)">📅 Tu mejor día es <strong>'+bestDay.k+'</strong> — media de <strong>'+fmt(bestDay.avg)+'€</strong> por directo</div>':'')
    +'</div></details>':'';
 
+  // ── LISTADO ──
   var body='';
-  if(!months.length){body='<div class="empty-state" style="padding:28px;text-align:center;color:var(--t3);line-height:1.6">Aún no has registrado nada.<br>Cada vez que hagas un directo, break o subasta, apúntalo arriba y aquí verás tu resumen del mes.</div>';}
-  if(months.length&&!shown.length){body='<div class="empty-state" style="padding:24px;text-align:center;color:var(--t3)">No hay registros con ese filtro.</div>';}
-  shown.forEach(function(mk){
-    var list=byM[mk].slice().sort(function(a,b){return (a.fecha||'')<(b.fecha||'')?1:-1;});
-    var y=+mk.slice(0,4),m=+mk.slice(5,7)-1;var label=mLabel(y,m);var col=MPAL[m%12];
-    var C=calcM(list);var cerrado=_closed.indexOf(mk)>=0;
-    var nDir=0,multS=0,multN=0,audS=0,audN=0,picoMax=0,valS=0,valN=0,pctS=0,pctN=0,ytLast=0,igLast=0;
-    list.forEach(function(d){
-      if(d.tipo!=='Venta directa')nDir++;
-      if(d.ventas&&d.stock){multS+=d.ventas/d.stock;multN++;}
-      if(d.aud){audS+=d.aud;audN++;}if(d.pico&&d.pico>picoMax)picoMax=d.pico;
-      if(d.valoracion){valS+=d.valoracion;valN++;}if(d.pct_directo){pctS+=d.pct_directo;pctN++;}
-      if(d.yt_subs&&d.yt_subs>ytLast)ytLast=d.yt_subs;if(d.ig_subs&&d.ig_subs>igLast)igLast=d.ig_subs;
-    });
-    var multMedio=multN?multS/multN:0,audMedia=audN?audS/audN:0,valMedia=valN?valS/valN:0,pctMedio=pctN?pctS/pctN:0;
-    var rows=list.map(function(d){
-      var c2=TCOL[d.tipo]||'#6b6b63';var mult=(d.ventas&&d.stock)?' <span style="color:var(--t3)">('+fmtD(d.ventas/d.stock)+')</span>':'';
-      var ce=comEur(d);var badge='<span style="background:'+c2+'1e;color:'+c2+';font-weight:700;font-size:.66em;padding:2px 9px;border-radius:20px;white-space:nowrap">'+esc(d.tipo||'—')+'</span>';
-      return '<div style="background:var(--s1);border:1px solid var(--bd);border-radius:10px;padding:10px 13px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;box-shadow:var(--sh)">'
-        +'<div style="line-height:1.65;font-size:.82em">'+badge+' <span style="color:var(--t3)">'+(d.fecha||'')+'</span> · '+(d.cartas?d.cartas+' cartas · ':'')+'gastó '+fmt(d.stock)+'€ → <strong>'+fmt(d.ventas)+'€</strong>'+mult+(ce?' · <span style="color:var(--re)">−'+fmt(ce)+'€ com.</span>':'')+(d.aud?' · 👥'+d.aud:'')+(d.notas?'<br><span style="color:var(--t3)">📝 '+esc(d.notas)+'</span>':'')+'</div>'
-        +'<span style="white-space:nowrap;display:flex;gap:4px"><button class="btn-sm" onclick="editReg('+d.id+')">✎</button><button class="btn-sm danger" onclick="delReg('+d.id+')">×</button></span></div>';
-    }).join('');
-    var hasRedes=picoMax||valMedia||pctMedio||ytLast||igLast;
-    var mini=function(lbl,val,c){return '<div style="text-align:center"><div style="font-size:1.05em;font-weight:800;color:'+c+'">'+val+'</div><div style="font-size:.6em;color:var(--t3);text-transform:uppercase;margin-top:1px">'+lbl+'</div></div>';};
-    var redes=hasRedes?'<div style="margin-top:12px;padding:11px 13px;background:var(--s2);border:1px solid var(--bd);border-radius:9px"><div style="font-size:.62em;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:9px">📱 Redes y audiencia del mes</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(76px,1fr));gap:10px">'
-      +(ytLast?mini('YouTube',fmt(ytLast),'#d24a4a'):'')+(igLast?mini('Instagram',fmt(igLast),'#8b5cf6'):'')+(audMedia?mini('Aud. media',Math.round(audMedia),'#3b82f6'):'')+(picoMax?mini('Pico',picoMax,'#3b82f6'):'')+(valMedia?mini('Valoración',valMedia.toFixed(1)+'/5','#c2760f'):'')+(pctMedio?mini('% directo',Math.round(pctMedio)+'%','#2f9e6f'):'')
-      +'</div></div>':'';
-    var fisc='<div style="margin-top:12px;padding:10px 13px;background:var(--s2);border:1px solid var(--bd);border-radius:9px;font-size:.72em;color:var(--t2);line-height:1.9">Margen: <strong>'+fmt(C.margen)+'€</strong> · IVA REBU: <strong style="color:var(--re)">−'+fmt(C.iva)+'€</strong>'+(C.comisM?' · Comisión '+(CFG.comision||8)+'%: <strong style="color:var(--re)">−'+fmt(C.comisM)+'€</strong>':'')+' · Autónomos: <strong style="color:var(--re)">−'+fmt(C.auto)+'€</strong> · IRPF: <strong style="color:var(--re)">−'+fmt(C.irpf)+'€</strong> → <strong style="color:var(--g);font-size:1.12em">Limpio: '+fmt(C.limpio)+'€</strong></div>';
-    var closeBox=cerrado?'<div style="margin-top:12px;padding:12px 14px;background:#eef7f1;border:1px solid #a7d7bf;border-radius:10px"><div style="display:flex;justify-content:space-between;align-items:center"><strong style="color:var(--g)">🔒 Mes cerrado</strong><button class="btn-sm" onclick="reabrirMes(\''+mk+'\')">Reabrir</button></div></div>':'<div style="margin-top:12px;text-align:right"><button class="btn-sm primary" onclick="cerrarMes(\''+mk+'\','+C.rV+','+(C.margen-C.iva)+')">🔒 Cerrar mes</button></div>';
-    var entriesBlock=cerrado?'<details style="margin-top:2px"><summary style="cursor:pointer;font-size:.76em;color:var(--t3);font-weight:600;list-style:none;padding:6px 0">▸ Ver los '+list.length+' registros</summary><div class="wlist" style="margin-top:8px">'+rows+'</div></details>':'<div class="wlist">'+rows+'</div>';
-    var box=function(v,l,c){return '<div class="mfb"><div class="mfb-v"'+(c?' style="color:'+c+'"':'')+'>'+v+'</div><div class="mfb-l">'+l+'</div></div>';};
-    var boxes='<div class="mfb-head">✅ Resumen del mes</div><div class="mes-footer-boxes">'
+  var searching=!!(_fltText||_fltTipo);
+  if(!months.length){body='<div class="empty-state" style="padding:28px;text-align:center;color:var(--t3);line-height:1.6">Aún no has registrado nada.<br>Pulsa «Añadir directo / break» y apunta lo que ha pasado.</div>';}
+  else if(searching){
+    var all=DIRLOG.filter(function(d){var mk=(d.fecha||'').slice(0,7);
+      if(_fltY&&_fltY!==mk.slice(0,4))return false;if(_fltM&&_fltM!==mk.slice(5,7))return false;
+      if(_fltTipo&&d.tipo!==_fltTipo)return false;
+      if(_fltText){var hay=((d.tipo||'')+' '+(d.fecha||'')+' '+(d.notas||'')).toLowerCase();if(hay.indexOf(_fltText.toLowerCase())<0)return false;}
+      return true;}).sort(function(a,b){return (a.fecha||'')<(b.fecha||'')?1:-1;});
+    body=all.length?'<div style="font-size:.72em;color:var(--t3);margin-bottom:8px">'+all.length+' resultado(s)</div><div class="wlist">'+all.map(function(d){return entryCard(d);}).join('')+'</div>':'<div class="empty-state" style="padding:24px;text-align:center;color:var(--t3)">Sin resultados para esa búsqueda.</div>';
+  } else {
+    var shown=months.filter(function(mk){return (!_fltY||_fltY===mk.slice(0,4))&&(!_fltM||_fltM===mk.slice(5,7));});
+    if(!shown.length)body='<div class="empty-state" style="padding:24px;text-align:center;color:var(--t3)">No hay meses con ese filtro.</div>';
+    shown.forEach(function(mk){
+      var list=byM[mk].slice().sort(function(a,b){return (a.fecha||'')<(b.fecha||'')?1:-1;});
+      var y=+mk.slice(0,4),m=+mk.slice(5,7)-1;var label=mLabel(y,m);var col=MPAL[m%12];
+      var C=calcM(list);var cerrado=_closed.indexOf(mk)>=0;
+      var nDir=0,multS=0,multN=0,audS=0,audN=0,picoMax=0,valS=0,valN=0,pctS=0,pctN=0,ytLast=0,igLast=0;
+      list.forEach(function(d){
+        if(d.tipo!=='Venta directa')nDir++;
+        if(d.ventas&&d.stock){multS+=d.ventas/d.stock;multN++;}
+        if(d.aud){audS+=d.aud;audN++;}if(d.pico&&d.pico>picoMax)picoMax=d.pico;
+        if(d.valoracion){valS+=d.valoracion;valN++;}if(d.pct_directo){pctS+=d.pct_directo;pctN++;}
+        if(d.yt_subs&&d.yt_subs>ytLast)ytLast=d.yt_subs;if(d.ig_subs&&d.ig_subs>igLast)igLast=d.ig_subs;
+      });
+      var multMedio=multN?multS/multN:0,audMedia=audN?audS/audN:0,valMedia=valN?valS/valN:0,pctMedio=pctN?pctS/pctN:0;
+      var rows=list.map(function(d){return entryCard(d);}).join('');
+      var mini=function(lbl,val,c){return '<div style="text-align:center"><div style="font-size:1.05em;font-weight:800;color:'+c+'">'+val+'</div><div style="font-size:.6em;color:var(--t3);text-transform:uppercase;margin-top:1px">'+lbl+'</div></div>';};
+      var hasRedes=picoMax||valMedia||pctMedio||ytLast||igLast;
+      var redes=hasRedes?'<div style="margin-top:12px;padding:11px 13px;background:var(--s2);border:1px solid var(--bd);border-radius:9px"><div style="font-size:.62em;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:9px">📱 Redes y audiencia del mes</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(76px,1fr));gap:10px">'
+        +(ytLast?mini('YouTube',fmt(ytLast),'#d24a4a'):'')+(igLast?mini('Instagram',fmt(igLast),'#8b5cf6'):'')+(audMedia?mini('Aud. media',Math.round(audMedia),'#3b82f6'):'')+(picoMax?mini('Pico',picoMax,'#3b82f6'):'')+(valMedia?mini('Valoración',valMedia.toFixed(1)+'/5','#c2760f'):'')+(pctMedio?mini('% directo',Math.round(pctMedio)+'%','#2f9e6f'):'')
+        +'</div></div>':'';
+      var fisc='<div style="margin-top:12px;padding:10px 13px;background:var(--s2);border:1px solid var(--bd);border-radius:9px;font-size:.72em;color:var(--t2);line-height:1.9">Margen: <strong>'+fmt(C.margen)+'€</strong> · IVA REBU: <strong style="color:var(--re)">−'+fmt(C.iva)+'€</strong>'+(C.comisM?' · Comisión '+(CFG.comision||8)+'%: <strong style="color:var(--re)">−'+fmt(C.comisM)+'€</strong>':'')+' · Autónomos: <strong style="color:var(--re)">−'+fmt(C.auto)+'€</strong> · IRPF: <strong style="color:var(--re)">−'+fmt(C.irpf)+'€</strong> → <strong style="color:var(--g);font-size:1.12em">Limpio: '+fmt(C.limpio)+'€</strong></div>';
+      var box=function(v,l,c){return '<div class="mfb"><div class="mfb-v"'+(c?' style="color:'+c+'"':'')+'>'+v+'</div><div class="mfb-l">'+l+'</div></div>';};
+      var boxes='<div class="mfb-head">✅ Resumen del mes</div><div class="mes-footer-boxes">'
         +box(nDir,'Directos')+box(fmt(C.rV)+'€','Vendido','var(--b)')+box(fmt(C.rC)+'€','Gastado')+box(fmt(C.limpio)+'€','Beneficio limpio','var(--g)')
-        +(multMedio?box(fmtD(multMedio),'Mult medio'):'')+(audMedia?box(Math.round(audMedia),'Audiencia'):'')
-      +'</div>';
-    if(cerrado){
-      body+='<div class="mes-sec" id="mes-'+mk+'"><details><summary style="list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 15px;background:#eef7f1;border:1px solid #a7d7bf;border-radius:11px">'
-        +'<span style="font-weight:800;color:'+col+'">🔒 '+label+'</span>'
-        +'<span style="font-size:.82em;color:var(--t2)">'+nDir+' directos · vendido '+fmt(C.rV)+'€ · <strong style="color:var(--g)">limpio '+fmt(C.limpio)+'€</strong></span>'
-        +'<span style="margin-left:auto;display:flex;align-items:center;gap:10px"><span style="font-size:.72em;color:var(--t3)">ver más ▾</span><button class="btn-sm" onclick="event.preventDefault();event.stopPropagation();reabrirMes(\''+mk+'\')">Reabrir</button></span>'
-        +'</summary><div style="margin-top:12px"><div class="wlist">'+rows+'</div>'+boxes+redes+fisc+'</div></details></div>';
-    } else {
-      body+='<div class="mes-sec" id="mes-'+mk+'">'
-        +'<div class="mes-hdr"><div class="mes-name" style="color:'+col+'">'+label+'</div><div class="mes-meta">'+list.length+' registros · '+nDir+' directos</div><div class="mes-b">Vendido '+fmt(C.rV)+'€</div></div>'
-        +entriesBlock+boxes+redes+fisc+closeBox
-        +'</div>';
-    }
-  });
-  var _yrs=[];months.forEach(function(mk){var y=mk.slice(0,4);if(_yrs.indexOf(y)<0)_yrs.push(y);});_yrs.sort();
-  var filterBar=months.length?'<div class="dash-box" style="margin-bottom:18px;padding:12px 16px"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span style="font-size:.76em;font-weight:700;color:var(--t2)">🔎 Filtrar</span><select id="flt-y" onchange="setFlt()" style="'+inp+';width:auto"><option value="">Todos los años</option>'+_yrs.map(function(y){return '<option value="'+y+'"'+(_fltY===y?' selected':'')+'>'+y+'</option>';}).join('')+'</select><select id="flt-m" onchange="setFlt()" style="'+inp+';width:auto"><option value="">Todos los meses</option>'+MNS.map(function(nm,i){return '<option value="'+pad(i+1)+'"'+(_fltM===pad(i+1)?' selected':'')+'>'+nm+'</option>';}).join('')+'</select>'+((_fltY||_fltM)?'<button class="btn-sm" onclick="clearFlt()">Quitar filtro</button>':'')+'</div></div>':'';
-  cm.innerHTML=form+objBox+analisis+filterBar+body;
-  if(sb){sb.innerHTML='<div class="csb-title">Meses con registros</div>'+(months.length?months.map(function(mk){var y=+mk.slice(0,4),m=+mk.slice(5,7)-1;return '<div class="csb-item" onclick="scrollToMes(\''+mk+'\')"><div class="csb-dot" style="background:'+MPAL[m%12]+'"></div>'+mLabel(y,m)+'</div>';}).join(''):'<div style="padding:12px 16px;font-size:.72em;color:var(--t3)">Sin registros aún.</div>');}
+        +(multMedio?box(fmtD(multMedio),'Mult medio'):'')+(audMedia?box(Math.round(audMedia),'Audiencia'):'')+'</div>';
+      if(cerrado){
+        body+='<div class="mes-sec" id="mes-'+mk+'"><details><summary style="list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 15px;background:#eef7f1;border:1px solid #a7d7bf;border-radius:11px">'
+          +'<span style="font-weight:800;color:'+col+'">🔒 '+label+'</span>'
+          +'<span style="font-size:.82em;color:var(--t2)">'+nDir+' directos · vendido '+fmt(C.rV)+'€ · <strong style="color:var(--g)">limpio '+fmt(C.limpio)+'€</strong></span>'
+          +'<span style="margin-left:auto;display:flex;align-items:center;gap:10px"><span style="font-size:.72em;color:var(--t3)">ver más ▾</span><button class="btn-sm" onclick="event.preventDefault();event.stopPropagation();reabrirMes(\''+mk+'\')">Reabrir</button></span>'
+          +'</summary><div style="margin-top:12px"><div class="wlist">'+rows+'</div>'+boxes+redes+fisc+'</div></details></div>';
+      } else {
+        body+='<div class="mes-sec" id="mes-'+mk+'">'
+          +'<div class="mes-hdr"><div class="mes-name" style="color:'+col+'">'+label+'</div><div class="mes-meta">'+list.length+' registros · '+nDir+' directos</div><div class="mes-b">Vendido '+fmt(C.rV)+'€</div></div>'
+          +'<div class="wlist">'+rows+'</div>'+boxes+redes+fisc
+          +'<div style="margin-top:12px;text-align:right"><button class="btn-sm primary" onclick="cerrarMes(\''+mk+'\','+C.rV+','+(C.margen-C.iva)+')">🔒 Cerrar mes</button></div>'
+          +'</div>';
+      }
+    });
+  }
+  cm.innerHTML=statCards+addBtn+form+filterBar+analisis+body;
+  if(sb){sb.innerHTML='<div class="csb-title">Meses con registros</div>'+(months.length?months.map(function(mk){var y=+mk.slice(0,4),m=+mk.slice(5,7)-1;return '<div class="csb-item" style="cursor:pointer" onclick="goMonth(\''+mk+'\')"><div class="csb-dot" style="background:'+MPAL[m%12]+'"></div>'+mLabel(y,m)+'</div>';}).join(''):'<div style="padding:12px 16px;font-size:.72em;color:var(--t3)">Sin registros aún.</div>');}
 }
 
 function togWk(id){
