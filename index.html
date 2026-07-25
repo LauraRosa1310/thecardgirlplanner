@@ -9,7 +9,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
@@ -116,7 +116,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ac)!impo
 
 .mes-sec{margin-bottom:44px;}
 .mes-hdr{display:flex;align-items:baseline;gap:10px;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid var(--bd);}
-.mes-name{font-family:'Anton','Arial Narrow',sans-serif;font-size:1.15em;font-weight:400;letter-spacing:.02em;text-transform:uppercase;}
+.mes-name{font-family:'Fraunces',Georgia,serif;font-size:1.14em;font-weight:600;letter-spacing:0;text-transform:none;}
 details.mes-sec{margin-bottom:16px}
 .mband{list-style:none;cursor:pointer;display:flex;align-items:center;gap:11px;padding:12px 15px;border-radius:11px;border:1px solid var(--bd)}
 .mband::-webkit-details-marker{display:none}
@@ -510,7 +510,7 @@ details[open]>.mband .mchev{transform:rotate(90deg)}
     <button class="tab" data-t="check" onclick="sw('check',this)"><span class="ti">✓</span>Checklist</button>
     <button class="tab" data-t="cfg" onclick="sw('cfg',this)"><span class="ti">⚙</span>Config</button>
   </nav>
-  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v100</div>
+  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v101</div>
 </aside>
 <main class="content">
 
@@ -1019,13 +1019,13 @@ function renderCrono(){
   var totDir=0,totG=0,totV=0,totL=0;
   months.forEach(function(mk){var C=calcM(byM[mk]);totG+=C.rC;totV+=C.rV;totL+=C.limpio;byM[mk].forEach(function(d){if(d.tipo!=='Venta directa')totDir++;});});
   var scard=function(l,v,c){return '<div style="background:var(--s1);border:1px solid var(--bd);border-radius:14px;padding:15px 18px;box-shadow:var(--sh)"><div style="font-size:.72em;color:var(--t3);margin-bottom:4px">'+l+'</div><div style="font-size:1.65em;font-weight:800;color:'+(c||'var(--t1)')+'">'+v+'</div></div>';};
-  var statCards='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:18px">'
-    +scard('Directos',totDir,'var(--t1)')+scard('Invertido',fmt(totG)+'€','var(--t1)')+scard('Vendido',fmt(totV)+'€','var(--ac2,#a9781f)')+scard('Beneficio limpio',fmt(totL)+'€','var(--g)')
-    +'</div>';
+  var statCards='<div style="font-family:\'Fraunces\',Georgia,serif;font-size:1.9em;font-weight:600;color:var(--t1);line-height:1">Registro</div>'
+    +'<div style="font-size:.82em;color:var(--t3);margin-top:5px">'+totDir+' directos · invertido '+fmt(totG)+'€ · vendido <b style="color:#c2760f">'+fmt(totV)+'€</b> · limpio <b style="color:var(--g)">'+fmt(totL)+'€</b></div>'
+    +'<div style="border-top:2px solid var(--t1);margin:16px 0 14px"></div>';
 
   // ── AÑADIR + FORM (oculto) ──
   var showF=(_showForm||__editId);
-  var addBtn='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">'+'<button class="btn-save" style="margin:0" onclick="openReg(\'Break\')">+ Directo</button>'+'<button class="btn-save" style="margin:0;background:var(--b)" onclick="openReg(\'Venta directa\')">+ Venta suelta</button>'+'<button class="btn-save" style="margin:0;background:var(--p)" onclick="newPedido()">+ Pedido</button>'+(showF?'<button class="btn-sm" style="margin:0" onclick="toggleRegForm()">× Cerrar</button>':'')+'</div>';
+  var _pill='border:1px solid #e0c483;background:#fff;color:#b06a12;border-radius:99px;padding:8px 16px;font-size:.82em;font-weight:500;cursor:pointer;font-family:inherit';var addBtn='<div style="display:flex;gap:9px;flex-wrap:wrap;margin-bottom:16px">'+'<button style="'+_pill+'" onclick="openReg(\'Break\')">+ Directo</button>'+'<button style="'+_pill+'" onclick="openReg(\'Venta directa\')">+ Venta suelta</button>'+'<button style="'+_pill+'" onclick="newPedido()">+ Pedido</button>'+(showF?'<button class="btn-sm" style="margin:0" onclick="toggleRegForm()">× Cerrar</button>':'')+'</div>';
   var form='<div id="reg-form" style="display:'+(showF?'block':'none')+'"><div class="dash-box" style="margin-bottom:18px"><div class="box-title"><span>➕</span> Registrar lo que ha pasado</div>'
    +'<div id="rg-editing" style="display:none;font-size:.74em;color:var(--ac2,#a9781f);background:var(--acl,#f6efe0);border:1px solid var(--bd);border-radius:8px;padding:7px 11px;margin-bottom:10px"></div>'
    +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:9px">'
@@ -1043,14 +1043,14 @@ function renderCrono(){
 
   // ── BUSCADOR + FILTROS ──
   var _yrs=[];months.forEach(function(mk){var y=mk.slice(0,4);if(_yrs.indexOf(y)<0)_yrs.push(y);});_yrs.sort();
-  var filterBar='<div class="dash-box" style="margin-bottom:18px;padding:14px 16px">'
-   +'<input type="text" id="flt-txt" value="'+esc(_fltText)+'" oninput="setFltText(this.value)" placeholder="🔎 Buscar por tipo, fecha o nota…" style="'+inp+'">'
-   +'<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;align-items:center">'
-     +'<select id="flt-tipo" onchange="setFlt()" style="'+selS+'"><option value="">Todos los tipos</option>'+['Break','Subasta','Mixto','Venta directa'].map(function(t){return '<option'+(_fltTipo===t?' selected':'')+'>'+t+'</option>';}).join('')+'</select>'
-     +'<select id="flt-y" onchange="setFlt()" style="'+selS+'"><option value="">Todos los años</option>'+_yrs.map(function(y){return '<option value="'+y+'"'+(_fltY===y?' selected':'')+'>'+y+'</option>';}).join('')+'</select>'
-     +'<select id="flt-m" onchange="setFlt()" style="'+selS+'"><option value="">Todos los meses</option>'+MNS.map(function(nm,i){return '<option value="'+pad(i+1)+'"'+(_fltM===pad(i+1)?' selected':'')+'>'+nm+'</option>';}).join('')+'</select>'
+  var _msel='border:0;border-bottom:1px solid var(--bd);background:transparent;font-size:.78em;padding:4px 2px;color:var(--t3);font-family:inherit';
+  var filterBar='<div style="display:flex;gap:16px;align-items:center;margin-bottom:16px;flex-wrap:wrap">'
+   +'<input type="text" id="flt-txt" value="'+esc(_fltText)+'" oninput="setFltText(this.value)" placeholder="Buscar…" style="border:0;border-bottom:1px solid var(--bd);padding:6px 2px;font-size:.82em;background:transparent;min-width:150px;font-family:inherit">'
+     +'<select id="flt-tipo" onchange="setFlt()" style="'+_msel+'"><option value="">Todos los tipos</option>'+['Break','Subasta','Mixto','Venta directa'].map(function(t){return '<option'+(_fltTipo===t?' selected':'')+'>'+t+'</option>';}).join('')+'</select>'
+     +'<select id="flt-y" onchange="setFlt()" style="'+_msel+'"><option value="">Todos los años</option>'+_yrs.map(function(y){return '<option value="'+y+'"'+(_fltY===y?' selected':'')+'>'+y+'</option>';}).join('')+'</select>'
+     +'<select id="flt-m" onchange="setFlt()" style="'+_msel+'"><option value="">Todos los meses</option>'+MNS.map(function(nm,i){return '<option value="'+pad(i+1)+'"'+(_fltM===pad(i+1)?' selected':'')+'>'+nm+'</option>';}).join('')+'</select>'
      +((_fltY||_fltM||_fltTipo||_fltText)?'<button class="btn-sm" onclick="clearFlt()">Quitar filtros</button>':'')
-   +'</div></div>';
+   +'</div>';
 
   // ── ANÁLISIS (colapsable) ──
   var mAsc=Object.keys(byM).sort().slice(-12);
@@ -1123,7 +1123,7 @@ function renderCrono(){
             var mtable='<table class="mtable"><thead><tr><th>Fecha</th><th>Tipo</th><th class="r">Invertido</th><th class="r">Recibido</th><th class="r">ROI</th><th class="r">Beneficio</th><th></th></tr></thead><tbody>'+trows+'</tbody></table>';
       var actBtn=cerrado?'<button class="btn-sm" onclick="event.preventDefault();event.stopPropagation();reabrirMes(\''+mk+'\')">Reabrir</button>':'<button class="btn-sm primary" onclick="event.preventDefault();event.stopPropagation();cerrarMes(\''+mk+'\','+C.rV+','+(C.margen-C.iva)+')">🔒 Cerrar</button>';
       body+='<details class="mes-sec" id="mes-'+mk+'"'+(cerrado?'':' open')+'>'
-        +'<summary class="mband" style="background:'+col+'12;border-left:5px solid '+col+'">'
+        +'<summary class="mband" style="background:#fff;border-left:4px solid '+col+'">'
           +'<span class="mchev">▸</span>'
           +'<span class="mes-name" style="color:'+col+';font-size:1.02em">'+label+(cerrado?' <span style="font-size:.6em">🔒</span>':'')+'</span>'
           +'<span style="font-size:.75em;color:var(--t2)">'+nDir+' directos'+(nVta?' · '+nVta+' venta'+(nVta>1?'s':''):'')+'</span>'+(pedNew?'<span style="background:var(--rel);color:var(--re);font-size:.62em;font-weight:600;padding:2px 8px;border-radius:20px;margin-left:4px">⚠ pedido nuevo · reábrelo para recalcular</span>':'')
