@@ -510,7 +510,7 @@ details[open]>.mband .mchev{transform:rotate(90deg)}
     <button class="tab" data-t="check" onclick="sw('check',this)"><span class="ti">✓</span>Checklist</button>
     <button class="tab" data-t="cfg" onclick="sw('cfg',this)"><span class="ti">⚙</span>Config</button>
   </nav>
-  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v99</div>
+  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v100</div>
 </aside>
 <main class="content">
 
@@ -929,7 +929,7 @@ function buildWeeks(mc,isEnero,idx){
 // ══ RENDER CRONOGRAMA ══
 var __editId=null;var _fltY='',_fltM='',_fltTipo='',_fltText='',_showForm=false;
 var MPAL=['#4f46e5','#0e7490','#059669','#b45309','#7c3aed','#be185d','#0369a1','#c2410c','#15803d','#a21caf','#1d4ed8','#b91c1c'];
-var TCOL={'Break':'#c2760f','Subasta':'#8b5cf6','Mixto':'#14b8a6','Venta directa':'#3b82f6'};
+var TCOL={'Break':'#334155','Subasta':'#c2760f','Mixto':'#0e7c66','Venta directa':'#3b82f6'};
 function ensureMonths(){
   var have={};MESES.forEach(function(m){have[mid(m.y,m.m)]=1;});
   DIRLOG.forEach(function(d){var mk=(d.fecha||'').slice(0,7);if(mk&&!have[mk]){var y=+mk.slice(0,4),m=+mk.slice(5,7)-1;MESES.push({y:y,m:m,ds:0,vd:0,br:0,pq:0,vp:0,fixed:false,cls:'extra',label:mLabel(y,m)});have[mk]=1;}});
@@ -1119,7 +1119,7 @@ function renderCrono(){
       var monthRoi=C.rC>0?Math.round(C.limpio/C.rC*100)+'%':'—';
       var _env=envioMes(mk);var _adu=C.aduana||0;var _cromos=C.rC-_env;
       var _row=function(l,v,c,strong){return '<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:.74em'+(strong?';font-weight:600;border-top:1px solid var(--bd);margin-top:4px;padding-top:6px':'')+'"><span style="color:var(--t3)">'+l+'</span><span style="color:'+(c||'var(--t2)')+'">'+v+'</span></div>';};
-      var fiscLine='<div style="margin-top:8px;padding:11px 15px;background:var(--s2);border-radius:9px;max-width:300px">'+_row('Vendido',fmt(C.rV)+'€','var(--t1)')+_row('Cromos','−'+fmt(_cromos)+'€','var(--re)')+(_env?_row('Envío','−'+fmt(_env)+'€','var(--re)'):'')+_row('Margen',fmt(C.margen)+'€','var(--t1)',1)+_row('IVA REBU','−'+fmt(C.iva)+'€','var(--re)')+(C.comisM?_row('Comisión','−'+fmt(C.comisM)+'€','var(--re)'):'')+_row('Autónomos','−'+fmt(C.auto)+'€','var(--re)')+(_adu?_row('Aduanas/DHL','−'+fmt(_adu)+'€','var(--re)'):'')+_row('IRPF','−'+fmt(C.irpf)+'€','var(--re)')+_row('Beneficio limpio',fmt(C.limpio)+'€','var(--g)',1)+'</div>';
+      var _roiM=C.rC>0?Math.round(C.limpio/C.rC*100):0;var fiscLine='<div style="width:230px;position:sticky;top:14px;align-self:flex-start"><div style="background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:14px 16px"><div style="font-size:.58em;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:9px">Desglose del mes</div>'+_row('Vendido',fmt(C.rV)+'€','var(--t1)')+_row('Cromos','−'+fmt(_cromos)+'€','var(--re)')+(_env?_row('Envío','−'+fmt(_env)+'€','var(--re)'):'')+_row('Margen',fmt(C.margen)+'€','var(--t1)',1)+_row('IVA REBU','−'+fmt(C.iva)+'€','var(--re)')+(C.comisM?_row('Comisión','−'+fmt(C.comisM)+'€','var(--re)'):'')+_row('Autónomos','−'+fmt(C.auto)+'€','var(--re)')+(_adu?_row('Aduanas/DHL','−'+fmt(_adu)+'€','var(--re)'):'')+_row('IRPF','−'+fmt(C.irpf)+'€','var(--re)')+'</div><div style="background:var(--sdb);color:#fff;border-radius:12px;padding:14px 16px;margin-top:10px"><div style="font-size:.6em;color:#c7ccd4;text-transform:uppercase;letter-spacing:.06em">Beneficio limpio</div><div style="font-size:1.7em;font-weight:700;color:#e6c079">'+fmt(C.limpio)+'€</div><div style="font-size:.64em;color:#c7ccd4">ROI '+_roiM+'%</div></div></div>';
             var mtable='<table class="mtable"><thead><tr><th>Fecha</th><th>Tipo</th><th class="r">Invertido</th><th class="r">Recibido</th><th class="r">ROI</th><th class="r">Beneficio</th><th></th></tr></thead><tbody>'+trows+'</tbody></table>';
       var actBtn=cerrado?'<button class="btn-sm" onclick="event.preventDefault();event.stopPropagation();reabrirMes(\''+mk+'\')">Reabrir</button>':'<button class="btn-sm primary" onclick="event.preventDefault();event.stopPropagation();cerrarMes(\''+mk+'\','+C.rV+','+(C.margen-C.iva)+')">🔒 Cerrar</button>';
       body+='<details class="mes-sec" id="mes-'+mk+'"'+(cerrado?'':' open')+'>'
@@ -1129,7 +1129,7 @@ function renderCrono(){
           +'<span style="font-size:.75em;color:var(--t2)">'+nDir+' directos'+(nVta?' · '+nVta+' venta'+(nVta>1?'s':''):'')+'</span>'+(pedNew?'<span style="background:var(--rel);color:var(--re);font-size:.62em;font-weight:600;padding:2px 8px;border-radius:20px;margin-left:4px">⚠ pedido nuevo · reábrelo para recalcular</span>':'')
           +'<span style="margin-left:auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:.78em"><span>vendido <strong>'+fmt(C.rV)+'€</strong></span><span style="color:var(--g)">limpio <strong>'+fmt(C.limpio)+'€</strong></span><span style="color:var(--ac2)">ROI '+monthRoi+'</span>'+actBtn+'</span>'
         +'</summary>'
-        +'<div style="padding:6px 4px">'+fiscLine+mtable+redes+'</div>'
+        +'<div style="padding:6px 2px;display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap"><div style="flex:1;min-width:250px">'+mtable+'</div>'+fiscLine+'</div>'+(redes?'<div style="padding:4px 2px 2px">'+redes+'</div>':'')
       +'</details>';
     });
   }
