@@ -510,7 +510,7 @@ details[open]>.mband .mchev{transform:rotate(90deg)}
     <button class="tab" data-t="check" onclick="sw('check',this)"><span class="ti">✓</span>Checklist</button>
     <button class="tab" data-t="cfg" onclick="sw('cfg',this)"><span class="ti">⚙</span>Config</button>
   </nav>
-  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v103</div>
+  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v104</div>
 </aside>
 <main class="content">
 
@@ -565,6 +565,7 @@ details[open]>.mband .mchev{transform:rotate(90deg)}
     <input type="number" id="jy" value="2028" min="2025" max="2040" style="width:76px;" onchange="jumpTo()">
     
     <button onclick="exportCal()" style="background:var(--sdb);color:#fff">📅 Añadir a calendario</button>
+    <button onclick="clearCal()" style="background:#fff;border:1px solid var(--bd);color:var(--re)">🗑 Quitar del calendario</button>
     <button onclick="genMes()" style="background:var(--ac)">⚙ Generar mes desde el plan</button>
     <span style="font-size:.7em;color:var(--t3);">Click en un día para añadir evento</span>
   </div>
@@ -1735,6 +1736,20 @@ function exportCal(){
   exp=exp.concat(nuevos.map(function(e){return e.key;}));try{LS.set('tcg_calexp',JSON.stringify(exp));}catch(e){}
   if(window._cloudPushDebounced)window._cloudPushDebounced();
   alert('Se ha descargado un archivo con '+nuevos.length+' evento(s) nuevo(s). Ábrelo para importarlos en tu calendario (iPhone, Google, Outlook…). La próxima vez solo se añadirá lo nuevo.');
+}
+function _dateFromKey(k){if(k.indexOf('cal:')===0)return k.slice(4,14);if(k.indexOf('fis:')===0)return k.slice(4,14);if(k.indexOf('dir:')===0){var id=k.slice(4);var d=(DIRLOG||[]).find(function(x){return String(x.id)===id;});return (d&&d.fecha)?d.fecha:todayStr();}return todayStr();}
+function clearCal(){
+  var exp;try{exp=JSON.parse(LS.get('tcg_calexp')||'[]');}catch(e){exp=[];}
+  if(!exp.length){alert('No hay nada exportado que quitar.');return;}
+  if(!confirm('Se descargará un archivo para QUITAR del calendario los '+exp.length+' evento(s) que exportaste y se reiniciará el registro de exportación. ¿Continuar?'))return;
+  var n=new Date();var stamp=n.getUTCFullYear()+pad(n.getUTCMonth()+1)+pad(n.getUTCDate())+'T'+pad(n.getUTCHours())+pad(n.getUTCMinutes())+pad(n.getUTCSeconds())+'Z';
+  var ics='BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//The Card Girl//Planner//ES\r\nMETHOD:CANCEL\r\n';
+  exp.forEach(function(k){var ds=_dateFromKey(k);ics+='BEGIN:VEVENT\r\nUID:'+k.replace(/[^a-zA-Z0-9:_-]/g,'_')+'@thecardgirl\r\nDTSTAMP:'+stamp+'\r\nDTSTART;VALUE=DATE:'+_icsDate(ds)+'\r\nSTATUS:CANCELLED\r\nSEQUENCE:1\r\nEND:VEVENT\r\n';});
+  ics+='END:VCALENDAR\r\n';
+  var blob=new Blob([ics],{type:'text/calendar;charset=utf-8'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='TheCardGirl_quitar_calendario.ics';a.click();URL.revokeObjectURL(a.href);
+  try{LS.set('tcg_calexp','[]');}catch(e){}
+  if(window._cloudPushDebounced)window._cloudPushDebounced();
+  alert('Descargado el archivo de cancelación. Ábrelo para quitar los eventos del calendario.\n\nOjo: algunos calendarios (a veces iPhone/Google) no borran al importar; si ves que no desaparecen, tendrás que borrarlos a mano. El registro de exportación se ha reiniciado, así que puedes volver a exportar todo desde cero.');
 }
 function jumpTo(){calY=parseInt(document.getElementById('jy').value)||2028;calM=parseInt(document.getElementById('jm').value)||0;renderCal();}
 
