@@ -510,7 +510,7 @@ details[open]>.mband .mchev{transform:rotate(90deg)}
     <button class="tab" data-t="check" onclick="sw('check',this)"><span class="ti">✓</span>Checklist</button>
     <button class="tab" data-t="cfg" onclick="sw('cfg',this)"><span class="ti">⚙</span>Config</button>
   </nav>
-  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v102</div>
+  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v103</div>
 </aside>
 <main class="content">
 
@@ -564,6 +564,7 @@ details[open]>.mband .mchev{transform:rotate(90deg)}
     <select id="jm" onchange="jumpTo()"><option value="0">Enero</option><option value="1">Febrero</option><option value="2">Marzo</option><option value="3">Abril</option><option value="4">Mayo</option><option value="5">Junio</option><option value="6">Julio</option><option value="7">Agosto</option><option value="8">Septiembre</option><option value="9">Octubre</option><option value="10">Noviembre</option><option value="11">Diciembre</option></select>
     <input type="number" id="jy" value="2028" min="2025" max="2040" style="width:76px;" onchange="jumpTo()">
     
+    <button onclick="exportCal()" style="background:var(--sdb);color:#fff">📅 Añadir a calendario</button>
     <button onclick="genMes()" style="background:var(--ac)">⚙ Generar mes desde el plan</button>
     <span style="font-size:.7em;color:var(--t3);">Click en un día para añadir evento</span>
   </div>
@@ -1707,6 +1708,34 @@ function genMes(){
 function goToday(){const t=new Date();calY=t.getFullYear();calM=t.getMonth();renderCal();}
 function prevM(){if(calM===0){calM=11;calY--;}else calM--;renderCal();}
 function nextM(){if(calM===11){calM=0;calY++;}else calM++;renderCal();}
+
+function _icsDate(d){return (d||'').replace(/-/g,'');}
+function _icsNext(d){var dt=new Date(d+'T12:00');dt.setDate(dt.getDate()+1);return dt.getFullYear()+pad(dt.getMonth()+1)+pad(dt.getDate());}
+function buildCalEvents(){
+  var out=[];
+  try{Object.keys(CAL).forEach(function(k){(CAL[k]||[]).forEach(function(e){out.push({key:'cal:'+k+':'+e.t,date:k,time:null,title:e.t});});});}catch(e){}
+  try{(DIRLOG||[]).forEach(function(d){if(!d.fecha)return;out.push({key:'dir:'+d.id,date:d.fecha,time:(/^\d{2}:\d{2}$/.test(d.hora||'')?d.hora:null),title:(d.tipo||'Directo')+(d.ventas?' · '+fmt(d.ventas)+'€':'')});});}catch(e){}
+  try{var seen={};MESES.forEach(function(mc){var q=Math.floor(mc.m/3)+1,kk=mc.y+'-'+q;if(seen[kk])return;seen[kk]=1;var dd=q===1?[mc.y,4,20]:q===2?[mc.y,7,20]:q===3?[mc.y,10,20]:[mc.y+1,1,30];var ds=dd[0]+'-'+pad(dd[1])+'-'+pad(dd[2]);out.push({key:'fis:'+ds,date:ds,time:null,title:'⚖ Plazo fiscal 303+130 · T'+q+' '+mc.y});});}catch(e){}
+  return out;
+}
+function exportCal(){
+  var exp;try{exp=JSON.parse(LS.get('tcg_calexp')||'[]');}catch(e){exp=[];}
+  var nuevos=buildCalEvents().filter(function(e){return exp.indexOf(e.key)<0;});
+  if(!nuevos.length){alert('No hay novedades: todo lo que hay ya lo has añadido al calendario. Cuando registres cosas nuevas, vuelve a pulsar y se añadirán solo esas.');return;}
+  var n=new Date();var stamp=n.getUTCFullYear()+pad(n.getUTCMonth()+1)+pad(n.getUTCDate())+'T'+pad(n.getUTCHours())+pad(n.getUTCMinutes())+pad(n.getUTCSeconds())+'Z';
+  var ics='BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//The Card Girl//Planner//ES\r\nCALSCALE:GREGORIAN\r\n';
+  nuevos.forEach(function(e){
+    ics+='BEGIN:VEVENT\r\nUID:'+e.key.replace(/[^a-zA-Z0-9:_-]/g,'_')+'@thecardgirl\r\nDTSTAMP:'+stamp+'\r\n';
+    if(e.time){var h=parseInt(e.time.slice(0,2))||0,mi=e.time.slice(3,5);ics+='DTSTART:'+_icsDate(e.date)+'T'+pad(h)+mi+'00\r\nDTEND:'+_icsDate(e.date)+'T'+pad((h+1)%24)+mi+'00\r\n';}
+    else{ics+='DTSTART;VALUE=DATE:'+_icsDate(e.date)+'\r\nDTEND;VALUE=DATE:'+_icsNext(e.date)+'\r\n';}
+    ics+='SUMMARY:'+String(e.title).replace(/[\r\n,;]/g,' ')+'\r\nEND:VEVENT\r\n';
+  });
+  ics+='END:VCALENDAR\r\n';
+  var blob=new Blob([ics],{type:'text/calendar;charset=utf-8'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='TheCardGirl_calendario.ics';a.click();URL.revokeObjectURL(a.href);
+  exp=exp.concat(nuevos.map(function(e){return e.key;}));try{LS.set('tcg_calexp',JSON.stringify(exp));}catch(e){}
+  if(window._cloudPushDebounced)window._cloudPushDebounced();
+  alert('Se ha descargado un archivo con '+nuevos.length+' evento(s) nuevo(s). Ábrelo para importarlos en tu calendario (iPhone, Google, Outlook…). La próxima vez solo se añadirá lo nuevo.');
+}
 function jumpTo(){calY=parseInt(document.getElementById('jy').value)||2028;calM=parseInt(document.getElementById('jm').value)||0;renderCal();}
 
 // ══ FISCAL ══
@@ -2530,7 +2559,7 @@ try{renderHoy();}catch(e){console.error('hoy',e);}
 try{renderGastos();}catch(e){console.error('gastos',e);}
 const firebaseConfig={apiKey:"AIzaSyAqFQ5CRbAl5DaAag42yPHUqI5muk8K_R8",authDomain:"thegirlcardplanner.firebaseapp.com",databaseURL:"https://thegirlcardplanner-default-rtdb.europe-west1.firebasedatabase.app",projectId:"thegirlcardplanner",storageBucket:"thegirlcardplanner.firebasestorage.app",messagingSenderId:"907792812058",appId:"1:907792812058:web:b0cccd85bbe22710ce29a3",measurementId:"G-D44GW1H0N8"};
 let CLOUD_USER=null;
-const CLOUD_KEYS=['tcg_cfg','tcg_meses','tcg_real','tcg_cal','tcg_pedidos','tcg_fiscal','tcg_check','tcg_breaks','tcg_content','tcg_clientes','tcg_inv','tcg_dirlog','tcg_gastos','tcg_gextra','tcg_notas','tcg_pagado','tcg_hucha','tcg_split','tcg_rephist','tcg_closed','tcg_impsnap','tcg_cronohide','tcg_hoydone','tcg_lastbackup'];
+const CLOUD_KEYS=['tcg_cfg','tcg_meses','tcg_real','tcg_cal','tcg_pedidos','tcg_fiscal','tcg_check','tcg_breaks','tcg_content','tcg_clientes','tcg_inv','tcg_dirlog','tcg_gastos','tcg_gextra','tcg_notas','tcg_pagado','tcg_hucha','tcg_split','tcg_rephist','tcg_closed','tcg_impsnap','tcg_calexp','tcg_cronohide','tcg_hoydone','tcg_lastbackup'];
 function cloudGather(){const o={};CLOUD_KEYS.forEach(function(k){const v=LS.get(k);if(v!=null)o[k]=v;});return o;}
 let _cpT=null;
 window._cloudPushDebounced=function(){if(!CLOUD_USER||typeof firebase==='undefined')return;clearTimeout(_cpT);_cpT=setTimeout(function(){try{firebase.database().ref('users/'+CLOUD_USER.uid).set({data:cloudGather(),updated:Date.now()});}catch(e){}},1200);};
