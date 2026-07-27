@@ -510,7 +510,7 @@ details[open]>.mband .mchev{transform:rotate(90deg)}
     <button class="tab" data-t="check" onclick="sw('check',this)"><span class="ti">✓</span>Checklist</button>
     <button class="tab" data-t="cfg" onclick="sw('cfg',this)"><span class="ti">⚙</span>Config</button>
   </nav>
-  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v101</div>
+  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v102</div>
 </aside>
 <main class="content">
 
@@ -1091,7 +1091,7 @@ function renderCrono(){
     if(!shown.length)body='<div class="empty-state" style="padding:24px;text-align:center;color:var(--t3)">No hay meses con ese filtro.</div>';
     shown.forEach(function(mk){
       var list=byM[mk].slice().sort(function(a,b){return (a.fecha||'')<(b.fecha||'')?1:-1;});
-      var y=+mk.slice(0,4),m=+mk.slice(5,7)-1;var label=mLabel(y,m);var col=MPAL[m%12];
+      var y=+mk.slice(0,4),m=+mk.slice(5,7)-1;var label=mLabel(y,m);var col='#2b2f36';
       var C=calcM(list);var cerrado=_closed.indexOf(mk)>=0;var pedNew=cerrado&&_impsnap[mk]!=null&&importMes(mk)>_impsnap[mk];
       var nDir=0,nVta=0,multS=0,multN=0,audS=0,audN=0,picoMax=0,valS=0,valN=0,pctS=0,pctN=0,ytLast=0,igLast=0;
       list.forEach(function(d){
@@ -1137,7 +1137,7 @@ function renderCrono(){
   if(sb){
     var _byQ={};months.forEach(function(mk){var y=+mk.slice(0,4),m=+mk.slice(5,7)-1;var qk=y+'-T'+(Math.floor(m/3)+1);(_byQ[qk]=_byQ[qk]||[]).push(mk);});
     var _qk=Object.keys(_byQ).sort().reverse();
-    sb.innerHTML='<div class="csb-title">Meses con registros</div>'+(months.length?_qk.map(function(qk){var qy=qk.slice(0,4),qq=qk.slice(6);return '<div style="font-size:.6em;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);padding:13px 16px 3px">Trimestre '+qq+' · '+qy+'</div>'+_byQ[qk].map(function(mk){var m=+mk.slice(5,7)-1;return '<div class="csb-item" style="cursor:pointer" onclick="goMonth(\''+mk+'\')"><div class="csb-dot" style="background:'+MPAL[m%12]+'"></div>'+MNS[m]+'</div>';}).join('');}).join(''):'<div style="padding:12px 16px;font-size:.72em;color:var(--t3)">Sin registros aún.</div>');
+    sb.innerHTML='<div class="csb-title">Meses con registros</div>'+(months.length?_qk.map(function(qk){var qy=qk.slice(0,4),qq=qk.slice(6);return '<div style="font-size:.6em;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);padding:13px 16px 3px">Trimestre '+qq+' · '+qy+'</div>'+_byQ[qk].map(function(mk){var m=+mk.slice(5,7)-1;return '<div class="csb-item" style="cursor:pointer" onclick="goMonth(\''+mk+'\')"><div class="csb-dot" style="background:#2b2f36"></div>'+MNS[m]+'</div>';}).join('');}).join(''):'<div style="padding:12px 16px;font-size:.72em;color:var(--t3)">Sin registros aún.</div>');
   }
 }
 
