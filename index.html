@@ -510,7 +510,7 @@ details[open]>.mband .mchev{transform:rotate(90deg)}
     <button class="tab" data-t="check" onclick="sw('check',this)"><span class="ti">✓</span>Checklist</button>
     <button class="tab" data-t="cfg" onclick="sw('cfg',this)"><span class="ti">⚙</span>Config</button>
   </nav>
-  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v104</div>
+  <div class="trinfo">REBU · margen global<br>Capital 10.000€ · ×1,45<br>Planner v105</div>
 </aside>
 <main class="content">
 
@@ -2572,6 +2572,30 @@ try{renderCrono();}catch(e){console.error('crono',e);}
 try{renderDash();}catch(e){console.error('dash',e);}
 try{renderHoy();}catch(e){console.error('hoy',e);}
 try{renderGastos();}catch(e){console.error('gastos',e);}
+/* PUENTE CromoVault -> Planner */
+(function(){
+  var inc=null;
+  try{ var hm=(location.hash||'').match(/tcgimp=([^&]+)/);
+       if(hm){ inc=JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(hm[1]))))); try{history.replaceState(null,'',location.pathname+location.search);}catch(e){} } }catch(e){}
+  if(!inc){ try{ var r=localStorage.getItem('tcg_import_directo'); if(r) inc=JSON.parse(r);}catch(e){} }
+  if(!inc) return;
+  try{localStorage.removeItem('tcg_import_directo');}catch(e){}
+  var t0=Date.now(), hinted=false;
+  var iv=setInterval(function(){
+    if(Date.now()-t0>7000){clearInterval(iv);return;}
+    var rf=document.getElementById('reg-form'); var vis=rf&&rf.style.display!=='none';
+    var f=document.getElementById('rg-fecha'); var applied=f&&String(f.value||'')===String(inc.fecha||'');
+    if(applied&&vis) return;
+    try{ var tb=document.querySelector('.tab[data-t="crono"]'); if(tb&&typeof sw==='function') sw('crono',tb); }catch(e){}
+    try{ if(typeof openReg==='function') openReg(inc.tipo||'Break'); }catch(e){}
+    f=document.getElementById('rg-fecha'); if(!f) return;
+    var st=function(id,v){var e=document.getElementById(id); if(e&&v!=null&&v!=='') e.value=v;};
+    st('rg-fecha',inc.fecha); st('rg-gast',inc.invertido); st('rg-vend',inc.recibido); st('rg-cartas',inc.cartas);
+    st('rg-notas', inc.nombre?('Importado de CromoVault: '+inc.nombre):'Importado de CromoVault');
+    var cm=document.getElementById('rg-com'); if(cm&&typeof inc.com==='boolean') cm.checked=inc.com;
+    if(!hinted){ hinted=true; setTimeout(function(){ alert('Directo importado de CromoVault \u2714\nRevisa el TIPO de directo y pulsa "+ Guardar".'); },250); }
+  },350);
+})();
 const firebaseConfig={apiKey:"AIzaSyAqFQ5CRbAl5DaAag42yPHUqI5muk8K_R8",authDomain:"thegirlcardplanner.firebaseapp.com",databaseURL:"https://thegirlcardplanner-default-rtdb.europe-west1.firebasedatabase.app",projectId:"thegirlcardplanner",storageBucket:"thegirlcardplanner.firebasestorage.app",messagingSenderId:"907792812058",appId:"1:907792812058:web:b0cccd85bbe22710ce29a3",measurementId:"G-D44GW1H0N8"};
 let CLOUD_USER=null;
 const CLOUD_KEYS=['tcg_cfg','tcg_meses','tcg_real','tcg_cal','tcg_pedidos','tcg_fiscal','tcg_check','tcg_breaks','tcg_content','tcg_clientes','tcg_inv','tcg_dirlog','tcg_gastos','tcg_gextra','tcg_notas','tcg_pagado','tcg_hucha','tcg_split','tcg_rephist','tcg_closed','tcg_impsnap','tcg_calexp','tcg_cronohide','tcg_hoydone','tcg_lastbackup'];
